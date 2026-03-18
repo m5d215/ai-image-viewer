@@ -1,0 +1,21 @@
+services:
+  viewer:
+    build: .
+    ports:
+      - "${PORT:-3000}:3000"
+    volumes:
+      - ${IMAGE_DIR:?IMAGE_DIR is required}:/images:ro
+      - db-data:/data/db
+      - thumb-data:/data/thumbnails
+    environment:
+      - IMAGE_DIR=/images
+      - DB_PATH=/data/db/viewer.db
+      - THUMB_DIR=/data/thumbnails
+      - PORT=3000
+      - AUTH_USER=${AUTH_USER:-}
+      - AUTH_PASS=${AUTH_PASS:-}
+    restart: unless-stopped
+
+volumes:
+  db-data:
+  thumb-data:
