@@ -7,7 +7,17 @@
 画像のEXIFメタデータ（プロンプト・タイトル）を活用した検索・管理・比較ができるWebアプリケーション。
 シングルユーザー・ローカル完結で動作し、Docker対応。
 
-<!-- TODO: スクリーンショットを追加 -->
+### 画像一覧
+
+![画像一覧](docs/screenshots/grid.png)
+
+### 画像詳細
+
+![画像詳細](docs/screenshots/detail.png)
+
+### 比較モード（プロンプトdiff）
+
+![比較モード](docs/screenshots/compare.png)
 
 ## 主な機能
 
