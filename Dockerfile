@@ -2,7 +2,7 @@
 FROM oven/bun:1 AS build
 WORKDIR /app
 
-COPY package.json bun.lockb ./
+COPY package.json bun.lock ./
 RUN bun install --frozen-lockfile
 
 COPY . .
@@ -16,10 +16,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libvips-dev \
   && rm -rf /var/lib/apt/lists/*
 
-COPY --from=build /app/package.json /app/bun.lockb ./
+COPY --from=build /app/package.json /app/bun.lock ./
 RUN bun install --frozen-lockfile --production
 
-COPY --from=build /app/dist ./dist
+# Client build output
+COPY --from=build /app/dist/client ./dist/client
+
+# Server source (Bun runs TypeScript directly)
+COPY --from=build /app/src ./src
+COPY --from=build /app/tsconfig.json ./
 
 # データディレクトリの事前作成
 RUN mkdir -p /data/db /data/thumbnails
@@ -32,4 +37,4 @@ ENV PORT=3000
 
 EXPOSE 3000
 
-CMD ["bun", "run", "dist/server/index.js"]
+CMD ["bun", "run", "src/server/index.ts"]
