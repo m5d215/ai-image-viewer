@@ -14,7 +14,7 @@ interface ListOptions {
   sort?: SortColumn;
   order?: SortOrder;
   tagIds?: number[];
-  tagMode?: 'and' | 'or';
+  tagMode?: 'and' | 'or' | 'not';
 }
 
 export function isSortColumn(value: string): value is SortColumn {
@@ -25,10 +25,25 @@ export function isSortOrder(value: string): value is SortOrder {
   return value === 'asc' || value === 'desc';
 }
 
-function buildTagFilter(tagIds: number[], tagMode: 'and' | 'or'): { join: string; where: string; groupBy: string; params: number[] } {
+interface TagFilter {
+  join: string;
+  where: string;
+  groupBy: string;
+  params: number[];
+}
+
+function buildTagFilter(tagIds: number[], tagMode: 'and' | 'or' | 'not'): TagFilter {
   // tagIds are already validated as numbers by zod
   const placeholders = tagIds.map((_, i) => `?${String(i + 1)}`).join(', ');
 
+  if (tagMode === 'not') {
+    return {
+      join: '',
+      where: `WHERE images.id NOT IN (SELECT image_id FROM image_tags WHERE tag_id IN (${placeholders}))`,
+      groupBy: '',
+      params: tagIds,
+    };
+  }
   if (tagMode === 'and') {
     return {
       join: 'JOIN image_tags ON images.id = image_tags.image_id',
@@ -64,7 +79,7 @@ export function getAllImages(db: Database, options: ListOptions): z.infer<typeof
   return rows.map((row) => ImageRow.parse(row));
 }
 
-export function countImages(db: Database, options?: { tagIds?: number[]; tagMode?: 'and' | 'or' }): number {
+export function countImages(db: Database, options?: { tagIds?: number[]; tagMode?: 'and' | 'or' | 'not' }): number {
   if (options?.tagIds && options.tagIds.length > 0) {
     const mode = options.tagMode ?? 'or';
     const filter = buildTagFilter(options.tagIds, mode);

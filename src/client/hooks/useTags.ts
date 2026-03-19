@@ -11,8 +11,8 @@ interface UseTagsReturn {
   tags: TagWithCount[];
   loading: boolean;
   selectedTags: Set<number>;
-  tagMode: 'and' | 'or';
-  setTagMode: (mode: 'and' | 'or') => void;
+  tagMode: 'and' | 'or' | 'not';
+  setTagMode: (mode: 'and' | 'or' | 'not') => void;
   toggleTag: (tagId: TagId) => void;
   createTag: (name: string) => Promise<void>;
   deleteTag: (id: TagId) => Promise<void>;
@@ -23,7 +23,7 @@ export function useTags(): UseTagsReturn {
   const [tags, setTags] = useState<TagWithCount[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedTags, setSelectedTags] = useState<Set<number>>(new Set());
-  const [tagMode, setTagMode] = useState<'and' | 'or'>('or');
+  const [tagMode, setTagMode] = useState<'and' | 'or' | 'not'>('or');
   const [refreshKey, incrementRefreshKey] = useReducer((c: number) => c + 1, 0);
 
   useEffect(() => {

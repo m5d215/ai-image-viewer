@@ -72,7 +72,7 @@ function ImageListPage({
 }) {
   const { tags, selectedTags, tagMode, setTagMode, toggleTag, createTag, deleteTag, refresh: refreshTags } = useTags();
 
-  const imagesOptions = useMemo((): { limit?: number; tagIds?: number[]; tagMode?: 'and' | 'or' } => {
+  const imagesOptions = useMemo((): { limit?: number; tagIds?: number[]; tagMode?: 'and' | 'or' | 'not' } => {
     if (selectedTags.size > 0) {
       return { tagIds: Array.from(selectedTags), tagMode };
     }

@@ -5,7 +5,7 @@ import { fetchImages } from '../lib/api';
 interface UseImagesOptions {
   limit?: number;
   tagIds?: number[];
-  tagMode?: 'and' | 'or';
+  tagMode?: 'and' | 'or' | 'not';
 }
 
 interface UseImagesReturn {

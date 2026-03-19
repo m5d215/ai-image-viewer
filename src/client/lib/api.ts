@@ -57,7 +57,7 @@ export async function fetchImages(
   limit: number,
   sort?: string,
   tagIds?: number[],
-  tagMode?: 'and' | 'or',
+  tagMode?: 'and' | 'or' | 'not',
 ): Promise<z.infer<typeof ImageListResponse>> {
   const params = new URLSearchParams({
     page: String(page),

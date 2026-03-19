@@ -5,9 +5,9 @@ import type { TagWithCount } from '../lib/api';
 interface TagFilterProps {
   tags: TagWithCount[];
   selectedTags: Set<number>;
-  tagMode: 'and' | 'or';
+  tagMode: 'and' | 'or' | 'not';
   onToggleTag: (tagId: TagId) => void;
-  onTagModeChange: (mode: 'and' | 'or') => void;
+  onTagModeChange: (mode: 'and' | 'or' | 'not') => void;
   onCreateTag: (name: string) => Promise<void>;
   onDeleteTag: (id: TagId) => Promise<void>;
 }
@@ -42,7 +42,10 @@ export function TagFilter({
   };
 
   const handleToggleMode = () => {
-    onTagModeChange(tagMode === 'and' ? 'or' : 'and');
+    const modes: Array<'or' | 'and' | 'not'> = ['or', 'and', 'not'];
+    const currentIndex = modes.indexOf(tagMode);
+    const nextIndex = (currentIndex + 1) % modes.length;
+    onTagModeChange(modes[nextIndex] ?? 'or');
   };
 
   return (
@@ -62,7 +65,7 @@ export function TagFilter({
             Mode: {tagMode.toUpperCase()}
           </button>
           <p className="mt-1 text-xs text-gray-400">
-            {tagMode === 'and' ? 'Match all selected tags' : 'Match any selected tag'}
+            {tagMode === 'and' ? 'Match all selected tags' : tagMode === 'not' ? 'Exclude selected tags' : 'Match any selected tag'}
           </p>
         </div>
       ) : null}

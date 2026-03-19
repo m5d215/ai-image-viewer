@@ -14,7 +14,7 @@ const ListQuery = z.object({
   sort: z.string().optional(),
   order: z.string().optional(),
   tags: z.string().optional(),
-  tagMode: z.enum(['and', 'or']).default('or'),
+  tagMode: z.enum(['and', 'or', 'not']).default('or'),
 });
 
 const images = new Hono();
@@ -28,7 +28,7 @@ images.get('/', (c) => {
   const { page, limit, sort, order, tags: tagsParam, tagMode } = parsed.data;
   const offset = (page - 1) * limit;
   const db = getDb();
-  const listOptions: { limit: number; offset: number; sort?: SortColumn; order?: SortOrder; tagIds?: number[]; tagMode?: 'and' | 'or' } = { limit, offset };
+  const listOptions: { limit: number; offset: number; sort?: SortColumn; order?: SortOrder; tagIds?: number[]; tagMode?: 'and' | 'or' | 'not' } = { limit, offset };
   if (typeof sort === 'string' && isSortColumn(sort)) {
     listOptions.sort = sort;
   }
@@ -51,7 +51,7 @@ images.get('/', (c) => {
   }
 
   const rows = getAllImages(db, listOptions);
-  const countOptions: { tagIds?: number[]; tagMode?: 'and' | 'or' } = {};
+  const countOptions: { tagIds?: number[]; tagMode?: 'and' | 'or' | 'not' } = {};
   if (listOptions.tagIds) {
     countOptions.tagIds = listOptions.tagIds;
   }
