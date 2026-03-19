@@ -6,8 +6,8 @@ let instance: Database | null = null;
 export function getDb(): Database {
   if (instance === null) {
     instance = new Database(env.DB_PATH);
-    instance.exec('PRAGMA journal_mode = WAL');
-    instance.exec('PRAGMA foreign_keys = ON');
+    instance.run('PRAGMA journal_mode = WAL');
+    instance.run('PRAGMA foreign_keys = ON');
   }
   return instance;
 }

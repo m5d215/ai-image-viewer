@@ -1,7 +1,7 @@
 import type { Database } from 'bun:sqlite';
 
 export function initializeDatabase(db: Database): void {
-  db.exec(`
+  db.run(`
     CREATE TABLE IF NOT EXISTS images (
       id          INTEGER PRIMARY KEY AUTOINCREMENT,
       file_path   TEXT NOT NULL UNIQUE,

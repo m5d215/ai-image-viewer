@@ -11,7 +11,7 @@ import { tags } from './routes/tags';
 const app = new Hono();
 
 // Conditional basic auth
-if (env.AUTH_USER != null && env.AUTH_PASS != null) {
+if (env.AUTH_USER !== undefined && env.AUTH_PASS !== undefined) {
   app.use(
     '/*',
     basicAuth({

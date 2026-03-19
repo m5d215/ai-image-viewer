@@ -21,5 +21,5 @@ export type Prompt = z.infer<typeof Prompt>;
 export const TagName = z.string().min(1).max(100).brand<'TagName'>();
 export type TagName = z.infer<typeof TagName>;
 
-export const ISODateString = z.string().datetime().brand<'ISODateString'>();
+export const ISODateString = z.iso.datetime().brand<'ISODateString'>();
 export type ISODateString = z.infer<typeof ISODateString>;

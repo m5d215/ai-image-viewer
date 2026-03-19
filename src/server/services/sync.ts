@@ -1,7 +1,7 @@
 import { readdir, stat, unlink } from 'fs/promises';
 import path from 'path';
 import type { Database } from 'bun:sqlite';
-import { z } from 'zod';
+import type { z } from 'zod';
 import { ImageId as ImageIdSchema } from '../../shared/brands';
 import { ImageRow, SyncResult } from '../../shared/schemas';
 import type { SyncResult as SyncResultType } from '../../shared/types';
@@ -67,7 +67,7 @@ export async function syncImages(db: Database): Promise<SyncResultType> {
   for (const [filePath, file] of fileMap) {
     const dbRecord = dbMap.get(filePath);
 
-    if (dbRecord == null) {
+    if (dbRecord === undefined) {
       // New file: ingest and insert
       const result = await ingestFile(filePath, db);
       insertImage(db, {

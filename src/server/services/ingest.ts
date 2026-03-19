@@ -22,8 +22,8 @@ const ExifResult = z.object({
 interface IngestResult {
   title: string | null;
   prompt: string | null;
-  width: number | null;
-  height: number | null;
+  width: number;
+  height: number;
   fileSize: number;
   fileMtime: string;
   thumbPath: string;
@@ -45,8 +45,8 @@ export async function ingestFile(filePath: string, _db: Database): Promise<Inges
 
   // Get image dimensions
   const metadata = await sharp(filePath).metadata();
-  const width = metadata.width ?? null;
-  const height = metadata.height ?? null;
+  const width = metadata.width;
+  const height = metadata.height;
 
   // Generate thumbnail (long side 400px, WebP, quality 80)
   const thumbDest = generateThumbPath(filePath);

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useReducer } from 'react';
 import type { TagId } from '@/shared/types';
 import type { TagWithCount } from '../lib/api';
 import {
@@ -24,26 +24,19 @@ export function useTags(): UseTagsReturn {
   const [loading, setLoading] = useState(true);
   const [selectedTags, setSelectedTags] = useState<Set<number>>(new Set());
   const [tagMode, setTagMode] = useState<'and' | 'or'>('or');
-  const [refreshKey, setRefreshKey] = useState(0);
-
-  const refresh = useCallback(() => {
-    setRefreshKey((prev) => prev + 1);
-  }, []);
+  const [refreshKey, incrementRefreshKey] = useReducer((c: number) => c + 1, 0);
 
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
 
     fetchTags()
       .then((result) => {
         if (!cancelled) {
           setTags(result);
+          setLoading(false);
         }
       })
       .catch(() => {
-        // Silently fail — tags are non-critical
-      })
-      .finally(() => {
         if (!cancelled) {
           setLoading(false);
         }
@@ -69,9 +62,9 @@ export function useTags(): UseTagsReturn {
   const createTag = useCallback(
     async (name: string): Promise<void> => {
       await apiCreateTag(name);
-      refresh();
+      incrementRefreshKey();
     },
-    [refresh],
+    [],
   );
 
   const deleteTag = useCallback(
@@ -82,10 +75,10 @@ export function useTags(): UseTagsReturn {
         next.delete(id);
         return next;
       });
-      refresh();
+      incrementRefreshKey();
     },
-    [refresh],
+    [],
   );
 
-  return { tags, loading, selectedTags, tagMode, setTagMode, toggleTag, createTag, deleteTag, refresh };
+  return { tags, loading, selectedTags, tagMode, setTagMode, toggleTag, createTag, deleteTag, refresh: incrementRefreshKey };
 }

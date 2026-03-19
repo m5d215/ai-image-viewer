@@ -18,7 +18,7 @@ interface ListOptions {
 }
 
 export function isSortColumn(value: string): value is SortColumn {
-  return (SORTABLE_COLUMNS as readonly string[]).includes(value);
+  return SORTABLE_COLUMNS.some((col) => col === value);
 }
 
 export function isSortOrder(value: string): value is SortOrder {
