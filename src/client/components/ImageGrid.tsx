@@ -49,11 +49,12 @@ export function ImageGrid({ images, onImageClick, selectionMode, selectedImages,
   const columns = useColumnCount(parentRef);
   const rowCount = Math.ceil(images.length / columns);
 
+  const ROW_GAP = 16; // gap-4 = 1rem = 16px
+
   const estimateRowHeight = useCallback(() => {
     const container = parentRef.current;
     if (container === null) return 320;
-    const gap = 16; // gap-4 = 1rem = 16px
-    const totalGaps = (columns - 1) * gap;
+    const totalGaps = (columns - 1) * ROW_GAP;
     const cardWidth = (container.clientWidth - totalGaps) / columns;
     // aspect-square image + ~56px for title/size below
     return cardWidth + 56;
@@ -63,8 +64,14 @@ export function ImageGrid({ images, onImageClick, selectionMode, selectedImages,
     count: rowCount,
     getScrollElement: () => parentRef.current,
     estimateSize: estimateRowHeight,
+    gap: ROW_GAP,
     overscan: 3,
   });
+
+  // Re-measure when columns change (window resize)
+  useEffect(() => {
+    rowVirtualizer.measure();
+  }, [columns, rowVirtualizer]);
 
   const getImageForCell = useCallback(
     (rowIndex: number, colIndex: number): ImageRow | undefined => {
@@ -91,7 +98,7 @@ export function ImageGrid({ images, onImageClick, selectionMode, selectedImages,
         {rowVirtualizer.getVirtualItems().map((virtualRow) => (
           <div
             key={virtualRow.key}
-            className="absolute left-0 top-0 grid w-full gap-4"
+            className="absolute left-0 top-0 grid w-full gap-x-4"
             style={{
               height: `${String(virtualRow.size)}px`,
               transform: `translateY(${String(virtualRow.start)}px)`,
