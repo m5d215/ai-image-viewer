@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import type { TagWithCount } from './lib/api';
 import { bulkAddTag } from './lib/api';
+import { CompareView } from './components/CompareView';
 import { ImageDetail } from './components/ImageDetail';
 import { ImageGrid } from './components/ImageGrid';
 import { SearchBar } from './components/SearchBar';
@@ -21,7 +22,12 @@ interface RouteDetail {
   imageId: number;
 }
 
-type Route = RouteHome | RouteDetail;
+interface RouteCompare {
+  page: 'compare';
+  imageIds: number[];
+}
+
+type Route = RouteHome | RouteDetail | RouteCompare;
 
 function parseRoute(path: string): Route {
   const match = /^\/images\/(\d+)$/.exec(path);
@@ -59,8 +65,10 @@ function useRouter(): { route: Route; navigate: (path: string) => void } {
 
 function ImageListPage({
   onImageClick,
+  onCompare,
 }: {
   onImageClick: (id: number) => void;
+  onCompare: (imageIds: number[]) => void;
 }) {
   const { tags, selectedTags, tagMode, setTagMode, toggleTag, createTag, deleteTag, refresh: refreshTags } = useTags();
 
@@ -208,6 +216,16 @@ function ImageListPage({
               {applyingBulk ? 'Applying...' : 'Apply'}
             </button>
           </div>
+          <button
+            type="button"
+            onClick={() => {
+              onCompare(Array.from(selectedImages));
+            }}
+            disabled={selectedImages.size < 2}
+            className="rounded bg-purple-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-purple-600 disabled:opacity-50"
+          >
+            Compare
+          </button>
         </div>
       ) : null}
     </div>
@@ -218,6 +236,7 @@ function ImageListPage({
 
 export function App() {
   const { route, navigate } = useRouter();
+  const [compareRoute, setCompareRoute] = useState<RouteCompare | null>(null);
 
   const handleImageClick = useCallback(
     (id: number) => {
@@ -227,8 +246,15 @@ export function App() {
   );
 
   const handleBack = useCallback(() => {
+    setCompareRoute(null);
     navigate('/');
   }, [navigate]);
+
+  const handleCompare = useCallback((imageIds: number[]) => {
+    setCompareRoute({ page: 'compare', imageIds });
+  }, []);
+
+  const currentPage = compareRoute ?? route;
 
   return (
     <div className="flex h-screen flex-col bg-gray-50">
@@ -237,6 +263,7 @@ export function App() {
         <button
           type="button"
           onClick={() => {
+            setCompareRoute(null);
             navigate('/');
           }}
           className="text-lg font-bold text-gray-900 hover:text-blue-600"
@@ -247,10 +274,12 @@ export function App() {
 
       {/* Main content */}
       <main className="flex-1 overflow-hidden">
-        {route.page === 'detail' ? (
-          <ImageDetail imageId={route.imageId} onBack={handleBack} />
+        {currentPage.page === 'compare' ? (
+          <CompareView imageIds={currentPage.imageIds} onBack={handleBack} />
+        ) : currentPage.page === 'detail' ? (
+          <ImageDetail imageId={currentPage.imageId} onBack={handleBack} />
         ) : (
-          <ImageListPage onImageClick={handleImageClick} />
+          <ImageListPage onImageClick={handleImageClick} onCompare={handleCompare} />
         )}
       </main>
     </div>
