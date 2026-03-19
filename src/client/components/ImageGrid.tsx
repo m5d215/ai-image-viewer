@@ -49,10 +49,20 @@ export function ImageGrid({ images, onImageClick, selectionMode, selectedImages,
   const columns = useColumnCount(parentRef);
   const rowCount = Math.ceil(images.length / columns);
 
+  const estimateRowHeight = useCallback(() => {
+    const container = parentRef.current;
+    if (container === null) return 320;
+    const gap = 16; // gap-4 = 1rem = 16px
+    const totalGaps = (columns - 1) * gap;
+    const cardWidth = (container.clientWidth - totalGaps) / columns;
+    // aspect-square image + ~56px for title/size below
+    return cardWidth + 56;
+  }, [columns]);
+
   const rowVirtualizer = useVirtualizer({
     count: rowCount,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => 280,
+    estimateSize: estimateRowHeight,
     overscan: 3,
   });
 
