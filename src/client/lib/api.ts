@@ -12,13 +12,17 @@ const ImageListResponse = z.object({
   limit: z.number().int(),
 });
 
-const TagListResponse = z.array(TagRow);
+const TagListResponse = z.object({
+  data: z.array(TagRow),
+});
 
 const SyncStatusResponse = z.object({
-  lastSyncAt: z.string().nullable(),
-  lastResult: SyncResult.nullable(),
+  data: z.object({
+    lastSyncTime: z.string().nullable(),
+    lastSyncResult: SyncResult.nullable(),
+  }),
 });
-export type SyncStatus = z.infer<typeof SyncStatusResponse>;
+export type SyncStatus = z.infer<typeof SyncStatusResponse>['data'];
 
 // --- Helpers ---
 
@@ -59,10 +63,14 @@ export async function fetchImages(
   return ImageListResponse.parse(data);
 }
 
+const ImageDetailResponse = z.object({
+  data: ImageRow,
+});
+
 export async function fetchImage(id: number): Promise<ImageRowType> {
   const parsedId = ImageId.parse(id);
-  const data = await request(`/api/images/${String(parsedId)}`);
-  return ImageRow.parse(data);
+  const raw = await request(`/api/images/${String(parsedId)}`);
+  return ImageDetailResponse.parse(raw).data;
 }
 
 export async function searchImages(
@@ -84,41 +92,49 @@ export async function updateImage(
   body: { title?: string },
 ): Promise<ImageRowType> {
   const parsedId = ImageId.parse(id);
-  const data = await request(`/api/images/${String(parsedId)}`, {
+  const raw = await request(`/api/images/${String(parsedId)}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   });
-  return ImageRow.parse(data);
+  return ImageDetailResponse.parse(raw).data;
 }
 
 // --- Sync APIs ---
 
+const SyncResponse = z.object({
+  data: SyncResult,
+});
+
 export async function syncImages(): Promise<SyncResultType> {
-  const data = await request('/api/sync', { method: 'POST' });
-  return SyncResult.parse(data);
+  const raw = await request('/api/sync', { method: 'POST' });
+  return SyncResponse.parse(raw).data;
 }
 
 export async function fetchSyncStatus(): Promise<SyncStatus> {
-  const data = await request('/api/sync/status');
-  return SyncStatusResponse.parse(data);
+  const raw = await request('/api/sync/status');
+  return SyncStatusResponse.parse(raw).data;
 }
 
 // --- Tag APIs ---
 
 export async function fetchTags(): Promise<TagRowType[]> {
-  const data = await request('/api/tags');
-  return TagListResponse.parse(data);
+  const raw = await request('/api/tags');
+  return TagListResponse.parse(raw).data;
 }
+
+const TagDetailResponse = z.object({
+  data: TagRow,
+});
 
 export async function createTag(name: string): Promise<TagRowType> {
   const parsedName = TagName.parse(name);
-  const data = await request('/api/tags', {
+  const raw = await request('/api/tags', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ name: parsedName }),
   });
-  return TagRow.parse(data);
+  return TagDetailResponse.parse(raw).data;
 }
 
 export async function deleteTag(id: number): Promise<void> {
