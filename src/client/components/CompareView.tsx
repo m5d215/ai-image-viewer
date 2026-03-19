@@ -279,7 +279,7 @@ export function CompareView({ imageIds, onBack }: CompareViewProps) {
   }
 
   return (
-    <div className="flex h-full flex-col overflow-hidden">
+    <div className="flex h-full flex-col overflow-auto">
       {/* Header */}
       <div className="flex items-center gap-4 border-b border-gray-200 bg-white px-6 py-4">
         <button
