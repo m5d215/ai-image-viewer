@@ -23,9 +23,9 @@ export function ImageCard({ image, onClick }: ImageCardProps) {
       tabIndex={0}
       onClick={handleClick}
       onKeyDown={handleKeyDown}
-      className="group cursor-pointer overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm transition-shadow hover:shadow-md"
+      className="group cursor-pointer rounded-lg border border-gray-200 bg-white shadow-sm transition-shadow hover:shadow-md"
     >
-      <div className="relative aspect-square overflow-hidden bg-gray-100">
+      <div className="relative aspect-square overflow-hidden rounded-t-lg bg-gray-100">
         <img
           src={`/api/images/${String(image.id)}/thumb`}
           alt={image.title ?? image.file_name}
@@ -33,8 +33,8 @@ export function ImageCard({ image, onClick }: ImageCardProps) {
           className="h-full w-full object-cover transition-transform group-hover:scale-105"
         />
         {image.prompt !== null ? (
-          <div className="absolute inset-x-0 bottom-0 translate-y-full bg-black/75 p-2 text-xs text-white transition-transform group-hover:translate-y-0">
-            <p className="line-clamp-3">{image.prompt}</p>
+          <div className="absolute inset-0 flex items-end bg-gradient-to-t from-black/80 via-black/30 to-transparent opacity-0 transition-opacity group-hover:opacity-100">
+            <p className="line-clamp-5 p-3 text-xs leading-relaxed text-white">{image.prompt}</p>
           </div>
         ) : null}
       </div>
