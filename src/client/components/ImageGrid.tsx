@@ -9,6 +9,9 @@ interface ImageGridProps {
   selectionMode: boolean;
   selectedImages: Set<number>;
   onToggleSelect: (id: number) => void;
+  hasMore: boolean;
+  loadMore: () => void;
+  loadingMore: boolean;
 }
 
 function useColumnCount(containerRef: React.RefObject<HTMLDivElement | null>): { columns: number; containerWidth: number } {
@@ -128,9 +131,32 @@ function VirtualGrid({
   );
 }
 
-export function ImageGrid({ images, onImageClick, selectionMode, selectedImages, onToggleSelect }: ImageGridProps) {
+export function ImageGrid({ images, onImageClick, selectionMode, selectedImages, onToggleSelect, hasMore, loadMore, loadingMore }: ImageGridProps) {
   const parentRef = useRef<HTMLDivElement>(null);
+  const sentinelRef = useRef<HTMLDivElement>(null);
   const { columns, containerWidth } = useColumnCount(parentRef);
+
+  // IntersectionObserver to trigger loadMore when sentinel is visible
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    const parent = parentRef.current;
+    if (sentinel === null || parent === null) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        if (entry !== undefined && entry.isIntersecting && hasMore && !loadingMore) {
+          loadMore();
+        }
+      },
+      { root: parent, rootMargin: '200px' },
+    );
+
+    observer.observe(sentinel);
+    return () => {
+      observer.disconnect();
+    };
+  }, [hasMore, loadMore, loadingMore]);
 
   if (images.length === 0) {
     return (
@@ -153,6 +179,12 @@ export function ImageGrid({ images, onImageClick, selectionMode, selectedImages,
         onToggleSelect={onToggleSelect}
         parentRef={parentRef}
       />
+      <div ref={sentinelRef} className="h-1" />
+      {loadingMore ? (
+        <div className="flex items-center justify-center py-4">
+          <div className="h-6 w-6 animate-spin rounded-full border-2 border-gray-300 border-t-blue-500" />
+        </div>
+      ) : null}
     </div>
   );
 }

@@ -79,7 +79,7 @@ function ImageListPage({
     return {};
   }, [selectedTags, tagMode]);
 
-  const { images, loading, error, refresh } = useImages(imagesOptions);
+  const { images, loading, loadingMore, hasMore, error, refresh, loadMore } = useImages(imagesOptions);
   const { query, setQuery, results, loading: searchLoading, isActive } = useSearch();
 
   const displayImages = isActive ? results : images;
@@ -177,6 +177,9 @@ function ImageListPage({
                 selectionMode={selectionMode}
                 selectedImages={selectedImages}
                 onToggleSelect={handleToggleSelect}
+                hasMore={isActive ? false : hasMore}
+                loadMore={loadMore}
+                loadingMore={loadingMore}
               />
             )}
           </div>
