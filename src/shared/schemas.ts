@@ -31,6 +31,11 @@ export const TagRow = z.object({
 });
 export type TagRow = z.infer<typeof TagRow>;
 
+export const ImageWithTags = ImageRow.extend({
+  tags: z.array(TagRow),
+});
+export type ImageWithTags = z.infer<typeof ImageWithTags>;
+
 // APIリクエスト
 export const SearchQuery = z.object({
   q: z.string().min(1).max(500),

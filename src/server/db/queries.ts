@@ -1,7 +1,7 @@
 import type { Database } from 'bun:sqlite';
 import { z } from 'zod';
-import type { ImageId } from '../../shared/types';
-import { ImageRow } from '../../shared/schemas';
+import type { ImageId, TagId } from '../../shared/types';
+import { ImageRow, TagRow } from '../../shared/schemas';
 import { ImageId as ImageIdSchema } from '../../shared/brands';
 
 const SORTABLE_COLUMNS = ['created_at', 'file_mtime', 'file_name', 'file_size'] as const;
@@ -13,6 +13,8 @@ interface ListOptions {
   offset: number;
   sort?: SortColumn;
   order?: SortOrder;
+  tagIds?: number[];
+  tagMode?: 'and' | 'or';
 }
 
 export function isSortColumn(value: string): value is SortColumn {
@@ -23,16 +25,61 @@ export function isSortOrder(value: string): value is SortOrder {
   return value === 'asc' || value === 'desc';
 }
 
+function buildTagFilter(tagIds: number[], tagMode: 'and' | 'or'): { join: string; where: string; groupBy: string; params: number[] } {
+  // tagIds are already validated as numbers by zod
+  const placeholders = tagIds.map((_, i) => `?${String(i + 1)}`).join(', ');
+
+  if (tagMode === 'and') {
+    return {
+      join: 'JOIN image_tags ON images.id = image_tags.image_id',
+      where: `WHERE image_tags.tag_id IN (${placeholders})`,
+      groupBy: `GROUP BY images.id HAVING COUNT(DISTINCT image_tags.tag_id) = ${String(tagIds.length)}`,
+      params: tagIds,
+    };
+  }
+  return {
+    join: 'JOIN image_tags ON images.id = image_tags.image_id',
+    where: `WHERE image_tags.tag_id IN (${placeholders})`,
+    groupBy: '',
+    params: tagIds,
+  };
+}
+
 export function getAllImages(db: Database, options: ListOptions): z.infer<typeof ImageRow>[] {
   const column = options.sort ?? 'created_at';
   const order = options.order ?? 'desc';
+
+  if (options.tagIds && options.tagIds.length > 0) {
+    const mode = options.tagMode ?? 'or';
+    const filter = buildTagFilter(options.tagIds, mode);
+    const paramOffset = filter.params.length;
+    const sql = `SELECT DISTINCT images.* FROM images ${filter.join} ${filter.where} ${filter.groupBy} ORDER BY images.${column} ${order} LIMIT ?${String(paramOffset + 1)} OFFSET ?${String(paramOffset + 2)}`;
+    const rows: unknown[] = db.query(sql).all(...filter.params, options.limit, options.offset);
+    return rows.map((row) => ImageRow.parse(row));
+  }
+
   const rows: unknown[] = db
     .query(`SELECT * FROM images ORDER BY ${column} ${order} LIMIT ?1 OFFSET ?2`)
     .all(options.limit, options.offset);
   return rows.map((row) => ImageRow.parse(row));
 }
 
-export function countImages(db: Database): number {
+export function countImages(db: Database, options?: { tagIds?: number[]; tagMode?: 'and' | 'or' }): number {
+  if (options?.tagIds && options.tagIds.length > 0) {
+    const mode = options.tagMode ?? 'or';
+    const filter = buildTagFilter(options.tagIds, mode);
+
+    if (mode === 'and') {
+      const sql = `SELECT COUNT(*) as count FROM (SELECT images.id FROM images ${filter.join} ${filter.where} ${filter.groupBy})`;
+      const row = db.query(sql).get(...filter.params);
+      return z.object({ count: z.number() }).parse(row).count;
+    }
+
+    const sql = `SELECT COUNT(DISTINCT images.id) as count FROM images ${filter.join} ${filter.where}`;
+    const row = db.query(sql).get(...filter.params);
+    return z.object({ count: z.number() }).parse(row).count;
+  }
+
   const row = db.query('SELECT COUNT(*) as count FROM images').get();
   return z.object({ count: z.number() }).parse(row).count;
 }
@@ -140,4 +187,25 @@ export function updateImage(db: Database, id: ImageId, data: UpdateImageData): v
 
 export function deleteImage(db: Database, id: ImageId): void {
   db.query('DELETE FROM images WHERE id = ?1').run(id);
+}
+
+export function getImageTags(db: Database, imageId: ImageId): z.infer<typeof TagRow>[] {
+  const rows: unknown[] = db
+    .query(
+      `SELECT tags.* FROM tags
+       JOIN image_tags ON tags.id = image_tags.tag_id
+       WHERE image_tags.image_id = ?1`,
+    )
+    .all(imageId);
+  return rows.map((row) => TagRow.parse(row));
+}
+
+export function bulkAddTagToImages(db: Database, imageIds: ImageId[], tagId: TagId): void {
+  const stmt = db.query('INSERT OR IGNORE INTO image_tags (image_id, tag_id) VALUES (?1, ?2)');
+  const transaction = db.transaction(() => {
+    for (const imageId of imageIds) {
+      stmt.run(imageId, tagId);
+    }
+  });
+  transaction();
 }

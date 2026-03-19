@@ -6,6 +6,9 @@ import { ImageCard } from './ImageCard';
 interface ImageGridProps {
   images: ImageRow[];
   onImageClick: (id: number) => void;
+  selectionMode: boolean;
+  selectedImages: Set<number>;
+  onToggleSelect: (id: number) => void;
 }
 
 function useColumnCount(containerRef: React.RefObject<HTMLDivElement | null>): number {
@@ -41,7 +44,7 @@ function useColumnCount(containerRef: React.RefObject<HTMLDivElement | null>): n
   return columns;
 }
 
-export function ImageGrid({ images, onImageClick }: ImageGridProps) {
+export function ImageGrid({ images, onImageClick, selectionMode, selectedImages, onToggleSelect }: ImageGridProps) {
   const parentRef = useRef<HTMLDivElement>(null);
   const columns = useColumnCount(parentRef);
   const rowCount = Math.ceil(images.length / columns);
@@ -95,6 +98,9 @@ export function ImageGrid({ images, onImageClick }: ImageGridProps) {
                   key={image.id}
                   image={image}
                   onClick={onImageClick}
+                  selectionMode={selectionMode}
+                  selected={selectedImages.has(image.id)}
+                  onToggleSelect={onToggleSelect}
                 />
               );
             })}

@@ -5,7 +5,7 @@ import { ImageId } from '../../shared/brands';
 import { ImagePatchBody, SearchQuery } from '../../shared/schemas';
 import { getDb } from '../db/connection';
 import type { SortColumn, SortOrder } from '../db/queries';
-import { countImages, getAllImages, getImageById, isSortColumn, isSortOrder, updateImage } from '../db/queries';
+import { countImages, getAllImages, getImageById, getImageTags, isSortColumn, isSortOrder, updateImage } from '../db/queries';
 import { searchImages } from '../services/search';
 
 const ListQuery = z.object({
@@ -13,6 +13,8 @@ const ListQuery = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(50),
   sort: z.string().optional(),
   order: z.string().optional(),
+  tags: z.string().optional(),
+  tagMode: z.enum(['and', 'or']).default('or'),
 });
 
 const images = new Hono();
@@ -23,18 +25,40 @@ images.get('/', (c) => {
   if (!parsed.success) {
     return c.json({ error: parsed.error.issues }, 400);
   }
-  const { page, limit, sort, order } = parsed.data;
+  const { page, limit, sort, order, tags: tagsParam, tagMode } = parsed.data;
   const offset = (page - 1) * limit;
   const db = getDb();
-  const listOptions: { limit: number; offset: number; sort?: SortColumn; order?: SortOrder } = { limit, offset };
+  const listOptions: { limit: number; offset: number; sort?: SortColumn; order?: SortOrder; tagIds?: number[]; tagMode?: 'and' | 'or' } = { limit, offset };
   if (typeof sort === 'string' && isSortColumn(sort)) {
     listOptions.sort = sort;
   }
   if (typeof order === 'string' && isSortOrder(order)) {
     listOptions.order = order;
   }
+
+  // Parse tag IDs from comma-separated string
+  if (typeof tagsParam === 'string' && tagsParam.length > 0) {
+    const tagIdResults = tagsParam.split(',').map((s) => z.coerce.number().int().positive().safeParse(s.trim()));
+    const validTagIds: number[] = [];
+    for (const result of tagIdResults) {
+      if (!result.success) {
+        return c.json({ error: 'Invalid tag ID in tags parameter' }, 400);
+      }
+      validTagIds.push(result.data);
+    }
+    listOptions.tagIds = validTagIds;
+    listOptions.tagMode = tagMode;
+  }
+
   const rows = getAllImages(db, listOptions);
-  const total = countImages(db);
+  const countOptions: { tagIds?: number[]; tagMode?: 'and' | 'or' } = {};
+  if (listOptions.tagIds) {
+    countOptions.tagIds = listOptions.tagIds;
+  }
+  if (listOptions.tagMode) {
+    countOptions.tagMode = listOptions.tagMode;
+  }
+  const total = countImages(db, countOptions);
   return c.json({ data: rows, total, page, limit });
 });
 
@@ -51,7 +75,7 @@ images.get('/search', (c) => {
   return c.json({ data: result.data, total: result.total, page, limit });
 });
 
-// GET /api/images/:id - get by ID
+// GET /api/images/:id - get by ID (includes tags)
 images.get('/:id', (c) => {
   const idParsed = ImageId.safeParse(Number(c.req.param('id')));
   if (!idParsed.success) {
@@ -62,7 +86,8 @@ images.get('/:id', (c) => {
   if (row === null) {
     return c.json({ error: 'Image not found' }, 404);
   }
-  return c.json({ data: row });
+  const imageTags = getImageTags(db, idParsed.data);
+  return c.json({ data: { ...row, tags: imageTags } });
 });
 
 // PATCH /api/images/:id - update metadata

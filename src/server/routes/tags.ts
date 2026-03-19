@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { ImageId, TagId } from '../../shared/brands';
 import { TagCreateBody, TagRow } from '../../shared/schemas';
 import { getDb } from '../db/connection';
+import { bulkAddTagToImages } from '../db/queries';
 
 const TagWithCount = TagRow.extend({
   image_count: z.number().int(),
@@ -61,6 +62,33 @@ tags.delete('/:id', (c) => {
   }
   db.query('DELETE FROM tags WHERE id = ?1').run(idParsed.data);
   return c.json({ success: true });
+});
+
+// POST /api/images/bulk/tags - bulk add tag to multiple images
+const BulkTagBody = z.object({
+  imageIds: z.array(z.number().int().positive()),
+  tagId: z.number().int().positive(),
+});
+
+tags.post('/images/bulk/tags', async (c) => {
+  const body: unknown = await c.req.json();
+  const bodyParsed = BulkTagBody.safeParse(body);
+  if (!bodyParsed.success) {
+    return c.json({ error: bodyParsed.error.issues }, 400);
+  }
+
+  const db = getDb();
+
+  // Verify tag exists
+  const tag: unknown = db.query('SELECT id FROM tags WHERE id = ?1').get(bodyParsed.data.tagId);
+  if (tag === null) {
+    return c.json({ error: 'Tag not found' }, 404);
+  }
+
+  const parsedImageIds = bodyParsed.data.imageIds.map((id) => ImageId.parse(id));
+  const parsedTagId = TagId.parse(bodyParsed.data.tagId);
+  bulkAddTagToImages(db, parsedImageIds, parsedTagId);
+  return c.json({ success: true }, 201);
 });
 
 // POST /api/images/:imageId/tags - add tag to image

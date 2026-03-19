@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import type { TagRow, TagId } from '@/shared/types';
+import type { TagId } from '@/shared/types';
+import type { TagWithCount } from '../lib/api';
 import {
   fetchTags,
   createTag as apiCreateTag,
@@ -7,9 +8,11 @@ import {
 } from '../lib/api';
 
 interface UseTagsReturn {
-  tags: TagRow[];
+  tags: TagWithCount[];
   loading: boolean;
   selectedTags: Set<number>;
+  tagMode: 'and' | 'or';
+  setTagMode: (mode: 'and' | 'or') => void;
   toggleTag: (tagId: TagId) => void;
   createTag: (name: string) => Promise<void>;
   deleteTag: (id: TagId) => Promise<void>;
@@ -17,9 +20,10 @@ interface UseTagsReturn {
 }
 
 export function useTags(): UseTagsReturn {
-  const [tags, setTags] = useState<TagRow[]>([]);
+  const [tags, setTags] = useState<TagWithCount[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedTags, setSelectedTags] = useState<Set<number>>(new Set());
+  const [tagMode, setTagMode] = useState<'and' | 'or'>('or');
   const [refreshKey, setRefreshKey] = useState(0);
 
   const refresh = useCallback(() => {
@@ -83,5 +87,5 @@ export function useTags(): UseTagsReturn {
     [refresh],
   );
 
-  return { tags, loading, selectedTags, toggleTag, createTag, deleteTag, refresh };
+  return { tags, loading, selectedTags, tagMode, setTagMode, toggleTag, createTag, deleteTag, refresh };
 }

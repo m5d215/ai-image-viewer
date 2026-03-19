@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import type { ImageRow, TagRow, TagId } from '@/shared/types';
+import type { TagRow, TagId, ImageWithTags } from '@/shared/types';
 import {
   fetchImage,
   fetchTags,
@@ -13,7 +13,7 @@ interface ImageDetailProps {
 }
 
 export function ImageDetail({ imageId, onBack }: ImageDetailProps) {
-  const [image, setImage] = useState<ImageRow | null>(null);
+  const [image, setImage] = useState<ImageWithTags | null>(null);
   const [allTags, setAllTags] = useState<TagRow[]>([]);
   const [imageTags, setImageTags] = useState<TagRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -29,8 +29,7 @@ export function ImageDetail({ imageId, onBack }: ImageDetailProps) {
       ]);
       setImage(imageData);
       setAllTags(tagsData);
-      // TODO: Load image-specific tags once API returns them
-      setImageTags([]);
+      setImageTags(imageData.tags);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to load image');
     } finally {

@@ -1,4 +1,4 @@
-export type { ImageRow, TagRow, SyncResult } from './schemas';
+export type { ImageRow, ImageWithTags, TagRow, SyncResult } from './schemas';
 export type {
   ImageId,
   TagId,

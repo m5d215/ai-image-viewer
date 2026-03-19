@@ -3,17 +3,24 @@ import type { ImageRow } from '@/shared/types';
 interface ImageCardProps {
   image: ImageRow;
   onClick: (id: number) => void;
+  selectionMode: boolean;
+  selected: boolean;
+  onToggleSelect: (id: number) => void;
 }
 
-export function ImageCard({ image, onClick }: ImageCardProps) {
+export function ImageCard({ image, onClick, selectionMode, selected, onToggleSelect }: ImageCardProps) {
   const handleClick = () => {
-    onClick(image.id);
+    if (selectionMode) {
+      onToggleSelect(image.id);
+    } else {
+      onClick(image.id);
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
-      onClick(image.id);
+      handleClick();
     }
   };
 
@@ -23,8 +30,25 @@ export function ImageCard({ image, onClick }: ImageCardProps) {
       tabIndex={0}
       onClick={handleClick}
       onKeyDown={handleKeyDown}
-      className="group cursor-pointer rounded-lg border border-gray-200 bg-white shadow-sm transition-shadow hover:shadow-md"
+      className={`group relative cursor-pointer rounded-lg border bg-white shadow-sm transition-shadow hover:shadow-md ${
+        selected ? 'border-blue-500 ring-2 ring-blue-300' : 'border-gray-200'
+      }`}
     >
+      {selectionMode ? (
+        <div className="absolute left-2 top-2 z-10">
+          <input
+            type="checkbox"
+            checked={selected}
+            onChange={() => {
+              onToggleSelect(image.id);
+            }}
+            onClick={(e) => {
+              e.stopPropagation();
+            }}
+            className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+          />
+        </div>
+      ) : null}
       <div className="relative aspect-square overflow-hidden rounded-t-lg bg-gray-100">
         <img
           src={`/api/images/${String(image.id)}/thumb`}

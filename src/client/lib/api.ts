@@ -1,7 +1,7 @@
 import { z } from 'zod';
-import { ImageRow, TagRow, SyncResult } from '@/shared/schemas';
+import { ImageRow, TagRow, ImageWithTags, SyncResult } from '@/shared/schemas';
 import { ImageId, TagId, TagName } from '@/shared/brands';
-import type { ImageRow as ImageRowType, TagRow as TagRowType, SyncResult as SyncResultType } from '@/shared/types';
+import type { ImageRow as ImageRowType, ImageWithTags as ImageWithTagsType, TagRow as TagRowType, SyncResult as SyncResultType } from '@/shared/types';
 
 // --- Response schemas ---
 
@@ -12,8 +12,13 @@ const ImageListResponse = z.object({
   limit: z.number().int(),
 });
 
+const TagWithCount = TagRow.extend({
+  image_count: z.number().int(),
+});
+export type TagWithCount = z.infer<typeof TagWithCount>;
+
 const TagListResponse = z.object({
-  data: z.array(TagRow),
+  data: z.array(TagWithCount),
 });
 
 const SyncStatusResponse = z.object({
@@ -51,6 +56,8 @@ export async function fetchImages(
   page: number,
   limit: number,
   sort?: string,
+  tagIds?: number[],
+  tagMode?: 'and' | 'or',
 ): Promise<z.infer<typeof ImageListResponse>> {
   const params = new URLSearchParams({
     page: String(page),
@@ -59,15 +66,21 @@ export async function fetchImages(
   if (sort !== undefined) {
     params.set('sort', sort);
   }
+  if (tagIds !== undefined && tagIds.length > 0) {
+    params.set('tags', tagIds.join(','));
+  }
+  if (tagMode !== undefined) {
+    params.set('tagMode', tagMode);
+  }
   const data = await request(`/api/images?${params.toString()}`);
   return ImageListResponse.parse(data);
 }
 
 const ImageDetailResponse = z.object({
-  data: ImageRow,
+  data: ImageWithTags,
 });
 
-export async function fetchImage(id: number): Promise<ImageRowType> {
+export async function fetchImage(id: number): Promise<ImageWithTagsType> {
   const parsedId = ImageId.parse(id);
   const raw = await request(`/api/images/${String(parsedId)}`);
   return ImageDetailResponse.parse(raw).data;
@@ -118,9 +131,21 @@ export async function fetchSyncStatus(): Promise<SyncStatus> {
 
 // --- Tag APIs ---
 
-export async function fetchTags(): Promise<TagRowType[]> {
+export async function fetchTags(): Promise<TagWithCount[]> {
   const raw = await request('/api/tags');
   return TagListResponse.parse(raw).data;
+}
+
+export async function bulkAddTag(
+  imageIds: number[],
+  tagId: number,
+): Promise<void> {
+  const parsedTagId = TagId.parse(tagId);
+  await request('/api/images/bulk/tags', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ imageIds, tagId: parsedTagId }),
+  });
 }
 
 const TagDetailResponse = z.object({

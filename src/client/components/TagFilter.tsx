@@ -1,10 +1,13 @@
 import { useState } from 'react';
-import type { TagRow, TagId } from '@/shared/types';
+import type { TagId } from '@/shared/types';
+import type { TagWithCount } from '../lib/api';
 
 interface TagFilterProps {
-  tags: TagRow[];
+  tags: TagWithCount[];
   selectedTags: Set<number>;
+  tagMode: 'and' | 'or';
   onToggleTag: (tagId: TagId) => void;
+  onTagModeChange: (mode: 'and' | 'or') => void;
   onCreateTag: (name: string) => Promise<void>;
   onDeleteTag: (id: TagId) => Promise<void>;
 }
@@ -12,7 +15,9 @@ interface TagFilterProps {
 export function TagFilter({
   tags,
   selectedTags,
+  tagMode,
   onToggleTag,
+  onTagModeChange,
   onCreateTag,
   onDeleteTag,
 }: TagFilterProps) {
@@ -36,11 +41,31 @@ export function TagFilter({
     }
   };
 
+  const handleToggleMode = () => {
+    onTagModeChange(tagMode === 'and' ? 'or' : 'and');
+  };
+
   return (
     <aside className="w-56 shrink-0 border-r border-gray-200 bg-gray-50 p-4">
       <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-gray-500">
         Tags
       </h2>
+
+      {/* AND/OR toggle */}
+      {selectedTags.size > 0 ? (
+        <div className="mb-3">
+          <button
+            type="button"
+            onClick={handleToggleMode}
+            className="rounded border border-gray-300 px-2 py-1 text-xs font-medium text-gray-600 hover:bg-gray-100"
+          >
+            Mode: {tagMode.toUpperCase()}
+          </button>
+          <p className="mt-1 text-xs text-gray-400">
+            {tagMode === 'and' ? 'Match all selected tags' : 'Match any selected tag'}
+          </p>
+        </div>
+      ) : null}
 
       {tags.length === 0 ? (
         <p className="text-sm text-gray-400">No tags yet</p>
@@ -58,6 +83,7 @@ export function TagFilter({
                   className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                 />
                 <span className="truncate">{tag.name}</span>
+                <span className="ml-auto text-xs text-gray-400">({String(tag.image_count)})</span>
               </label>
               <button
                 type="button"

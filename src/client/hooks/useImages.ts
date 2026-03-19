@@ -2,6 +2,12 @@ import { useState, useEffect, useCallback } from 'react';
 import type { ImageRow } from '@/shared/types';
 import { fetchImages } from '../lib/api';
 
+interface UseImagesOptions {
+  limit?: number;
+  tagIds?: number[];
+  tagMode?: 'and' | 'or';
+}
+
 interface UseImagesReturn {
   images: ImageRow[];
   total: number;
@@ -12,7 +18,8 @@ interface UseImagesReturn {
   refresh: () => void;
 }
 
-export function useImages(limit = 50): UseImagesReturn {
+export function useImages(options: UseImagesOptions = {}): UseImagesReturn {
+  const { limit = 50, tagIds, tagMode } = options;
   const [images, setImages] = useState<ImageRow[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -24,12 +31,15 @@ export function useImages(limit = 50): UseImagesReturn {
     setRefreshKey((prev) => prev + 1);
   }, []);
 
+  // Serialize tagIds for stable dependency comparison
+  const tagIdsKey = tagIds !== undefined ? tagIds.join(',') : '';
+
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
     setError(null);
 
-    fetchImages(page, limit)
+    fetchImages(page, limit, undefined, tagIds, tagMode)
       .then((result) => {
         if (!cancelled) {
           setImages(result.data);
@@ -50,7 +60,8 @@ export function useImages(limit = 50): UseImagesReturn {
     return () => {
       cancelled = true;
     };
-  }, [page, limit, refreshKey]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, limit, tagIdsKey, tagMode, refreshKey]);
 
   return { images, total, loading, error, page, setPage, refresh };
 }

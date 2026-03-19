@@ -1,4 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import type { TagWithCount } from './lib/api';
+import { bulkAddTag } from './lib/api';
 import { ImageDetail } from './components/ImageDetail';
 import { ImageGrid } from './components/ImageGrid';
 import { SearchBar } from './components/SearchBar';
@@ -60,55 +62,154 @@ function ImageListPage({
 }: {
   onImageClick: (id: number) => void;
 }) {
-  const { images, loading, error, refresh } = useImages();
+  const { tags, selectedTags, tagMode, setTagMode, toggleTag, createTag, deleteTag, refresh: refreshTags } = useTags();
+
+  const imagesOptions = useMemo((): { limit?: number; tagIds?: number[]; tagMode?: 'and' | 'or' } => {
+    if (selectedTags.size > 0) {
+      return { tagIds: Array.from(selectedTags), tagMode };
+    }
+    return {};
+  }, [selectedTags, tagMode]);
+
+  const { images, loading, error, refresh } = useImages(imagesOptions);
   const { query, setQuery, results, loading: searchLoading, isActive } = useSearch();
-  const { tags, selectedTags, toggleTag, createTag, deleteTag } = useTags();
 
   const displayImages = isActive ? results : images;
 
-  // Filter by selected tags (client-side, simple approach)
-  // Note: For proper tag filtering, the API should support it.
-  // This is a placeholder — tags on images aren't loaded yet in the list view.
-  const filteredImages =
-    selectedTags.size > 0 ? displayImages : displayImages;
+  // Selection mode state
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedImages, setSelectedImages] = useState<Set<number>>(new Set());
+  const [bulkTagId, setBulkTagId] = useState<number | null>(null);
+  const [applyingBulk, setApplyingBulk] = useState(false);
+
+  const handleToggleSelect = useCallback((id: number) => {
+    setSelectedImages((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  }, []);
+
+  const handleToggleSelectionMode = () => {
+    if (selectionMode) {
+      setSelectedImages(new Set());
+    }
+    setSelectionMode((prev) => !prev);
+  };
+
+  const handleApplyBulkTag = async () => {
+    if (bulkTagId === null || selectedImages.size === 0) return;
+    setApplyingBulk(true);
+    try {
+      await bulkAddTag(Array.from(selectedImages), bulkTagId);
+      setSelectedImages(new Set());
+      setSelectionMode(false);
+      setBulkTagId(null);
+      refresh();
+      refreshTags();
+    } finally {
+      setApplyingBulk(false);
+    }
+  };
 
   return (
-    <div className="flex h-full">
-      <TagFilter
-        tags={tags}
-        selectedTags={selectedTags}
-        onToggleTag={toggleTag}
-        onCreateTag={createTag}
-        onDeleteTag={deleteTag}
-      />
-      <div className="flex flex-1 flex-col overflow-hidden">
-        {/* Toolbar */}
-        <div className="flex items-center gap-4 border-b border-gray-200 bg-white px-6 py-3">
-          <div className="flex-1">
-            <SearchBar
-              query={query}
-              onQueryChange={setQuery}
-              loading={searchLoading}
-            />
+    <div className="flex h-full flex-col">
+      <div className="flex flex-1 overflow-hidden">
+        <TagFilter
+          tags={tags}
+          selectedTags={selectedTags}
+          tagMode={tagMode}
+          onToggleTag={toggleTag}
+          onTagModeChange={setTagMode}
+          onCreateTag={createTag}
+          onDeleteTag={deleteTag}
+        />
+        <div className="flex flex-1 flex-col overflow-hidden">
+          {/* Toolbar */}
+          <div className="flex items-center gap-4 border-b border-gray-200 bg-white px-6 py-3">
+            <div className="flex-1">
+              <SearchBar
+                query={query}
+                onQueryChange={setQuery}
+                loading={searchLoading}
+              />
+            </div>
+            <button
+              type="button"
+              onClick={handleToggleSelectionMode}
+              className={`rounded border px-3 py-1.5 text-sm font-medium transition-colors ${
+                selectionMode
+                  ? 'border-blue-500 bg-blue-50 text-blue-700'
+                  : 'border-gray-300 text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              {selectionMode ? 'Cancel Select' : 'Select'}
+            </button>
+            <SyncButton onSyncComplete={refresh} />
           </div>
-          <SyncButton onSyncComplete={refresh} />
-        </div>
 
-        {/* Content */}
-        <div className="flex-1 overflow-hidden p-4">
-          {error !== null ? (
-            <div className="flex h-full items-center justify-center text-red-500">
-              {error}
-            </div>
-          ) : loading && !isActive ? (
-            <div className="flex h-full items-center justify-center">
-              <div className="h-8 w-8 animate-spin rounded-full border-2 border-gray-300 border-t-blue-500" />
-            </div>
-          ) : (
-            <ImageGrid images={filteredImages} onImageClick={onImageClick} />
-          )}
+          {/* Content */}
+          <div className="flex-1 overflow-hidden p-4">
+            {error !== null ? (
+              <div className="flex h-full items-center justify-center text-red-500">
+                {error}
+              </div>
+            ) : loading && !isActive ? (
+              <div className="flex h-full items-center justify-center">
+                <div className="h-8 w-8 animate-spin rounded-full border-2 border-gray-300 border-t-blue-500" />
+              </div>
+            ) : (
+              <ImageGrid
+                images={displayImages}
+                onImageClick={onImageClick}
+                selectionMode={selectionMode}
+                selectedImages={selectedImages}
+                onToggleSelect={handleToggleSelect}
+              />
+            )}
+          </div>
         </div>
       </div>
+
+      {/* Bulk action bar */}
+      {selectionMode && selectedImages.size > 0 ? (
+        <div className="flex items-center gap-4 border-t border-gray-200 bg-white px-6 py-3 shadow-lg">
+          <span className="text-sm font-medium text-gray-700">
+            {String(selectedImages.size)} image{selectedImages.size > 1 ? 's' : ''} selected
+          </span>
+          <div className="flex items-center gap-2">
+            <select
+              value={bulkTagId !== null ? String(bulkTagId) : ''}
+              onChange={(e) => {
+                const val = e.target.value;
+                setBulkTagId(val.length > 0 ? Number(val) : null);
+              }}
+              className="rounded border border-gray-300 px-2 py-1.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            >
+              <option value="">Select tag...</option>
+              {tags.map((tag: TagWithCount) => (
+                <option key={tag.id} value={String(tag.id)}>
+                  {tag.name}
+                </option>
+              ))}
+            </select>
+            <button
+              type="button"
+              onClick={() => {
+                void handleApplyBulkTag();
+              }}
+              disabled={bulkTagId === null || applyingBulk}
+              className="rounded bg-blue-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-blue-600 disabled:opacity-50"
+            >
+              {applyingBulk ? 'Applying...' : 'Apply'}
+            </button>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
