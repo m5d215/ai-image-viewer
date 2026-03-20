@@ -10,9 +10,9 @@ interface UseSearchReturn {
   isActive: boolean;
 }
 
-export function useSearch(limit = 50): UseSearchReturn {
-  const [query, setQuery] = useState('');
-  const [debouncedQuery, setDebouncedQuery] = useState('');
+export function useSearch(initialQuery = '', limit = 50): UseSearchReturn {
+  const [query, setQuery] = useState(initialQuery);
+  const [debouncedQuery, setDebouncedQuery] = useState(initialQuery);
   const [results, setResults] = useState<ImageRow[]>([]);
   const [fetchCount, incrementFetchCount] = useReducer((c: number) => c + 1, 0);
   const [settledCount, setSettledCount] = useState(0);

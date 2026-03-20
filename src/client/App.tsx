@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import type { TagWithCount } from './lib/api';
 import { bulkAddTag } from './lib/api';
 import { CompareView } from './components/CompareView';
@@ -29,23 +29,53 @@ interface RouteCompare {
 
 type Route = RouteHome | RouteDetail | RouteCompare;
 
-function parseRoute(path: string): Route {
-  const match = /^\/images\/(\d+)$/.exec(path);
-  if (match !== null) {
-    const id = match[1];
+function parseRoute(url: string): Route {
+  // Parse pathname and search params from a URL string or path
+  let pathname: string;
+  let searchParams: URLSearchParams;
+  try {
+    const parsed = new URL(url, window.location.origin);
+    pathname = parsed.pathname;
+    searchParams = parsed.searchParams;
+  } catch {
+    pathname = url;
+    searchParams = new URLSearchParams();
+  }
+
+  // /images/:id → detail
+  const detailMatch = /^\/images\/(\d+)$/.exec(pathname);
+  if (detailMatch !== null) {
+    const id = detailMatch[1];
     if (id !== undefined) {
       return { page: 'detail', imageId: Number(id) };
     }
   }
+
+  // /compare?ids=1,2,3 → compare
+  if (pathname === '/compare') {
+    const idsParam = searchParams.get('ids');
+    if (idsParam !== null && idsParam.length > 0) {
+      const imageIds = idsParam
+        .split(',')
+        .map(Number)
+        .filter((n) => !Number.isNaN(n) && n > 0);
+      if (imageIds.length >= 2) {
+        return { page: 'compare', imageIds };
+      }
+    }
+  }
+
   return { page: 'home' };
 }
 
 function useRouter(): { route: Route; navigate: (path: string) => void } {
-  const [route, setRoute] = useState<Route>(() => parseRoute(window.location.pathname));
+  const [route, setRoute] = useState<Route>(() =>
+    parseRoute(window.location.pathname + window.location.search),
+  );
 
   useEffect(() => {
     const handlePopState = () => {
-      setRoute(parseRoute(window.location.pathname));
+      setRoute(parseRoute(window.location.pathname + window.location.search));
     };
     window.addEventListener('popstate', handlePopState);
     return () => {
@@ -61,6 +91,32 @@ function useRouter(): { route: Route; navigate: (path: string) => void } {
   return { route, navigate };
 }
 
+// --- URL search params helpers ---
+
+function getInitialSearchParams(): URLSearchParams {
+  return new URLSearchParams(window.location.search);
+}
+
+function getInitialQuery(): string {
+  return getInitialSearchParams().get('q') ?? '';
+}
+
+function getInitialSelectedTags(): Set<number> {
+  const tagsParam = getInitialSearchParams().get('tags');
+  if (tagsParam === null || tagsParam.length === 0) return new Set();
+  const ids = tagsParam
+    .split(',')
+    .map(Number)
+    .filter((n) => !Number.isNaN(n) && n > 0);
+  return new Set(ids);
+}
+
+function getInitialTagMode(): 'and' | 'or' | 'not' {
+  const mode = getInitialSearchParams().get('tagMode');
+  if (mode === 'and' || mode === 'or' || mode === 'not') return mode;
+  return 'or';
+}
+
 // --- Pages ---
 
 function ImageListPage({
@@ -70,7 +126,10 @@ function ImageListPage({
   onImageClick: (id: number) => void;
   onCompare: (imageIds: number[]) => void;
 }) {
-  const { tags, selectedTags, tagMode, setTagMode, toggleTag, createTag, deleteTag, refresh: refreshTags } = useTags();
+  const { tags, selectedTags, tagMode, setTagMode, toggleTag, createTag, deleteTag, refresh: refreshTags } = useTags({
+    initialSelectedTags: getInitialSelectedTags(),
+    initialTagMode: getInitialTagMode(),
+  });
 
   const imagesOptions = useMemo((): { limit?: number; tagIds?: number[]; tagMode?: 'and' | 'or' | 'not' } => {
     if (selectedTags.size > 0) {
@@ -80,9 +139,33 @@ function ImageListPage({
   }, [selectedTags, tagMode]);
 
   const { images, loading, loadingMore, hasMore, error, refresh, loadMore } = useImages(imagesOptions);
-  const { query, setQuery, results, loading: searchLoading, isActive } = useSearch();
+  const { query, setQuery, results, loading: searchLoading, isActive } = useSearch(getInitialQuery());
 
   const displayImages = isActive ? results : images;
+
+  // URL sync: update search params on filter state change (replaceState to avoid history pollution)
+  const isInitialRender = useRef(true);
+  useEffect(() => {
+    // Skip on initial render to avoid overwriting URL with same values
+    if (isInitialRender.current) {
+      isInitialRender.current = false;
+      return;
+    }
+
+    const params = new URLSearchParams();
+    if (query.length > 0) {
+      params.set('q', query);
+    }
+    if (selectedTags.size > 0) {
+      params.set('tags', Array.from(selectedTags).join(','));
+    }
+    if (selectedTags.size > 0 && tagMode !== 'or') {
+      params.set('tagMode', tagMode);
+    }
+    const search = params.toString();
+    const newUrl = search.length > 0 ? `/?${search}` : '/';
+    window.history.replaceState(null, '', newUrl);
+  }, [query, selectedTags, tagMode]);
 
   // Selection mode state
   const [selectionMode, setSelectionMode] = useState(false);
@@ -239,7 +322,6 @@ function ImageListPage({
 
 export function App() {
   const { route, navigate } = useRouter();
-  const [compareRoute, setCompareRoute] = useState<RouteCompare | null>(null);
 
   const handleImageClick = useCallback(
     (id: number) => {
@@ -249,15 +331,15 @@ export function App() {
   );
 
   const handleBack = useCallback(() => {
-    setCompareRoute(null);
     navigate('/');
   }, [navigate]);
 
-  const handleCompare = useCallback((imageIds: number[]) => {
-    setCompareRoute({ page: 'compare', imageIds });
-  }, []);
-
-  const currentPage = compareRoute ?? route;
+  const handleCompare = useCallback(
+    (imageIds: number[]) => {
+      navigate(`/compare?ids=${imageIds.join(',')}`);
+    },
+    [navigate],
+  );
 
   return (
     <div className="flex h-screen flex-col bg-gray-50">
@@ -266,7 +348,6 @@ export function App() {
         <button
           type="button"
           onClick={() => {
-            setCompareRoute(null);
             navigate('/');
           }}
           className="text-lg font-bold text-gray-900 hover:text-blue-600"
@@ -277,10 +358,10 @@ export function App() {
 
       {/* Main content */}
       <main className="flex-1 overflow-hidden">
-        {currentPage.page === 'compare' ? (
-          <CompareView imageIds={currentPage.imageIds} onBack={handleBack} />
-        ) : currentPage.page === 'detail' ? (
-          <ImageDetail imageId={currentPage.imageId} onBack={handleBack} />
+        {route.page === 'compare' ? (
+          <CompareView imageIds={route.imageIds} onBack={handleBack} />
+        ) : route.page === 'detail' ? (
+          <ImageDetail imageId={route.imageId} onBack={handleBack} />
         ) : (
           <ImageListPage onImageClick={handleImageClick} onCompare={handleCompare} />
         )}

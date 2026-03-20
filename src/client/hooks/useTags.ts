@@ -19,11 +19,14 @@ interface UseTagsReturn {
   refresh: () => void;
 }
 
-export function useTags(): UseTagsReturn {
+export function useTags(options?: {
+  initialSelectedTags?: Set<number>;
+  initialTagMode?: 'and' | 'or' | 'not';
+}): UseTagsReturn {
   const [tags, setTags] = useState<TagWithCount[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedTags, setSelectedTags] = useState<Set<number>>(new Set());
-  const [tagMode, setTagMode] = useState<'and' | 'or' | 'not'>('or');
+  const [selectedTags, setSelectedTags] = useState<Set<number>>(options?.initialSelectedTags ?? new Set());
+  const [tagMode, setTagMode] = useState<'and' | 'or' | 'not'>(options?.initialTagMode ?? 'or');
   const [refreshKey, incrementRefreshKey] = useReducer((c: number) => c + 1, 0);
 
   useEffect(() => {
