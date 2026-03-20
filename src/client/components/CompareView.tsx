@@ -89,7 +89,7 @@ function formatFileSize(bytes: number | null): string {
 
 function ImageCard({ image }: { image: ImageWithTags }) {
   return (
-    <div className="min-w-[350px] flex-shrink-0 rounded-lg border border-gray-200 bg-white shadow-sm">
+    <div className="min-w-0 flex-1 rounded-lg border border-gray-200 bg-white shadow-sm">
       {/* Image */}
       <div className="flex items-center justify-center bg-gray-100 p-4">
         <img

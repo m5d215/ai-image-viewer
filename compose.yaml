@@ -4,7 +4,7 @@ services:
     ports:
       - "${PORT:-3000}:3000"
     volumes:
-      - ${IMAGE_DIR:?IMAGE_DIR is required}:/images:ro
+      - ${IMAGE_DIR:-.}:/images:ro
       - db-data:/data/db
       - thumb-data:/data/thumbnails
     environment:
