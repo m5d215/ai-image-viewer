@@ -186,7 +186,6 @@ export function updateImage(db: Database, id: ImageId, data: UpdateImageData): v
   }
 
   fields.push(`updated_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now')`);
-  values.push(id);
 
   const bindValues: (string | number | null)[] = [];
   for (const v of values) {
