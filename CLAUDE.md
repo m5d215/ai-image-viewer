@@ -3,6 +3,7 @@
 ## アーキテクチャ
 
 - 設計書: plan.md を参照
+- ADR: [docs/adr/](./docs/adr/) — 設計判断の記録
 - 技術スタック: Bun + Hono + React + Vite + SQLite(FTS5) + sharp + exifr
 
 ## 開発コマンド
@@ -29,10 +30,3 @@
 - ESLintエラーを `eslint-disable` で黙らせない。型設計で解決
 - パスをハードコードしない。必ず `env.IMAGE_DIR`, `env.DB_PATH`, `env.THUMB_DIR` を参照
 - Dockerfileを変更した場合は `docker compose build` で動作確認
-
-## 開発フェーズ
-
-- Phase 1 (MVP): 実装中
-- Phase 2 (タグ): 未着手
-- Phase 3 (比較・拡張): 未着手
-- 機能追加は Phase 順に進める。Phaseを飛ばさない

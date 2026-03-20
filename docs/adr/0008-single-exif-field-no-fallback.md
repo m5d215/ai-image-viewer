@@ -1,0 +1,36 @@
+---
+id: "0008"
+title: EXIFフィールドマッピング — フォールバック不要、単一フィールド固定
+status: accepted
+date: 2026-03-19
+superseded_by: null
+tags: ["exif", "configuration", "architecture"]
+---
+
+# ADR-0008: EXIFフィールドマッピング — フォールバック不要、単一フィールド固定
+
+## Context
+
+当初、複数の生成AIツール（Stable Diffusion, ComfyUI, Midjourney等）に対応するため、EXIFフィールドの優先順位付きフォールバックリストを設計していた。
+
+## Decision
+
+フォールバック不要。config.tsにフィールド名を1つずつ指定するだけ。
+
+## Alternatives
+
+| 選択肢 | 利点 | 欠点 | 不採用理由 |
+|--------|------|------|------------|
+| UserComment → ImageDescription → XPComment → parameters の優先順位付きフォールバック | 複数ツールに自動対応できる | 使われないコードパスが増える、テスト・デバッグの負担 | 画像生成は自作ツールで行っておりメタデータの格納先が固定されている。将来ツールを変更した場合も config.ts を書き換えるだけで対応できる |
+
+## Consequences
+
+**Positive:**
+
+- コードがシンプルで、使われないコードパスがない
+- テスト・デバッグの負担が少ない
+- config.ts の書き換えだけでツール変更に対応できる
+
+**Negative:**
+
+- 複数の生成ツールを同時に使う場合、手動で config.ts を切り替える必要がある

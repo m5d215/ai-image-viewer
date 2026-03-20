@@ -1,0 +1,36 @@
+---
+id: "0001"
+title: 言語選定 — 全部TSに統一、Rustハイブリッドは見送り
+status: accepted
+date: 2026-03-19
+superseded_by: null
+tags: ["typescript", "architecture", "rust"]
+---
+
+# ADR-0001: 言語選定 — 全部TSに統一、Rustハイブリッドは見送り
+
+## Context
+
+インジェスト処理（数千枚のEXIF読取＋サムネイル生成）をRust CLIで切り出し、バックエンド/フロントをTSで書くハイブリッド構成も検討した。
+
+## Decision
+
+全部TSに統一する。
+
+## Alternatives
+
+| 選択肢 | 利点 | 欠点 | 不採用理由 |
+|--------|------|------|------------|
+| Rust CLI（ingest） + TS（バックエンド/フロント）のハイブリッド | CPU バウンド処理で高速 | ビルドチェーンが分かれる、Claude Code の自律開発が複雑になる | アプリは I/O バウンド中心で Rust の速度が活きる場面が少なく、exifr・sharp 等の TS エコシステムで十分カバーできる |
+
+## Consequences
+
+**Positive:**
+
+- 一つのコードベースで完結し、メンテコストが低い
+- ビルドチェーンが統一され、Claude Code の自律開発がシンプルになる
+- exifr, sharp など TS エコシステムで十分カバーできる
+
+**Negative:**
+
+- CPU バウンドな処理が将来必要になった場合、パフォーマンスが課題になる可能性がある
