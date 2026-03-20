@@ -342,30 +342,14 @@ export function App() {
   );
 
   return (
-    <div className="flex h-screen flex-col bg-gray-50">
-      {/* Header */}
-      <header className="flex items-center justify-between border-b border-gray-200 bg-white px-6 py-3 shadow-sm">
-        <button
-          type="button"
-          onClick={() => {
-            navigate('/');
-          }}
-          className="text-lg font-bold text-gray-900 hover:text-blue-600"
-        >
-          AI Image Viewer
-        </button>
-      </header>
-
-      {/* Main content */}
-      <main className="flex-1 overflow-hidden">
-        {route.page === 'compare' ? (
-          <CompareView imageIds={route.imageIds} onBack={handleBack} />
-        ) : route.page === 'detail' ? (
-          <ImageDetail imageId={route.imageId} onBack={handleBack} />
-        ) : (
-          <ImageListPage onImageClick={handleImageClick} onCompare={handleCompare} />
-        )}
-      </main>
-    </div>
+    <main className="h-screen overflow-hidden bg-gray-50">
+      {route.page === 'compare' ? (
+        <CompareView imageIds={route.imageIds} onBack={handleBack} />
+      ) : route.page === 'detail' ? (
+        <ImageDetail imageId={route.imageId} onBack={handleBack} />
+      ) : (
+        <ImageListPage onImageClick={handleImageClick} onCompare={handleCompare} />
+      )}
+    </main>
   );
 }
