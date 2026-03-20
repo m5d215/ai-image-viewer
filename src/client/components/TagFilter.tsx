@@ -102,7 +102,9 @@ export function TagFilter({
                 <button
                   type="button"
                   onClick={() => {
-                    void onDeleteTag(tag.id);
+                    if (window.confirm(`Delete tag "${tag.name}"? This will remove it from ${String(tag.image_count)} image(s) and cannot be undone.`)) {
+                      void onDeleteTag(tag.id);
+                    }
                   }}
                   className="invisible rounded p-1 text-gray-400 hover:text-red-500 group-hover:visible"
                   aria-label={`Delete tag ${tag.name}`}
