@@ -42,7 +42,7 @@ export function TagFilter({
   };
 
   const handleToggleMode = () => {
-    const modes: Array<'or' | 'and' | 'not'> = ['or', 'and', 'not'];
+    const modes: ('or' | 'and' | 'not')[] = ['or', 'and', 'not'];
     const currentIndex = modes.indexOf(tagMode);
     const nextIndex = (currentIndex + 1) % modes.length;
     onTagModeChange(modes[nextIndex] ?? 'or');
