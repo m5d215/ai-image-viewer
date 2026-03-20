@@ -176,7 +176,7 @@ export async function addTagToImage(
   await request(`/api/images/${String(parsedImageId)}/tags`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ tagId: parsedTagId }),
+    body: JSON.stringify({ tag_id: parsedTagId }),
   });
 }
 
