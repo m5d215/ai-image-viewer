@@ -56,8 +56,9 @@ export async function fetchImages(
   page: number,
   limit: number,
   sort?: string,
-  tagIds?: number[],
-  tagMode?: 'and' | 'or' | 'not',
+  includeTagIds?: number[],
+  excludeTagIds?: number[],
+  tagMode?: 'and' | 'or',
 ): Promise<z.infer<typeof ImageListResponse>> {
   const params = new URLSearchParams({
     page: String(page),
@@ -66,8 +67,11 @@ export async function fetchImages(
   if (sort !== undefined) {
     params.set('sort', sort);
   }
-  if (tagIds !== undefined && tagIds.length > 0) {
-    params.set('tags', tagIds.join(','));
+  if (includeTagIds !== undefined && includeTagIds.length > 0) {
+    params.set('includeTags', includeTagIds.join(','));
+  }
+  if (excludeTagIds !== undefined && excludeTagIds.length > 0) {
+    params.set('excludeTags', excludeTagIds.join(','));
   }
   if (tagMode !== undefined) {
     params.set('tagMode', tagMode);

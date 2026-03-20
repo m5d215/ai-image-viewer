@@ -101,19 +101,32 @@ function getInitialQuery(): string {
   return getInitialSearchParams().get('q') ?? '';
 }
 
-function getInitialSelectedTags(): Set<number> {
-  const tagsParam = getInitialSearchParams().get('tags');
-  if (tagsParam === null || tagsParam.length === 0) return new Set();
-  const ids = tagsParam
-    .split(',')
-    .map(Number)
-    .filter((n) => !Number.isNaN(n) && n > 0);
-  return new Set(ids);
+function getInitialTagFilterState(): Map<number, 'include' | 'exclude'> {
+  const params = getInitialSearchParams();
+  const state = new Map<number, 'include' | 'exclude'>();
+
+  const includeParam = params.get('includeTags');
+  if (includeParam !== null && includeParam.length > 0) {
+    for (const s of includeParam.split(',')) {
+      const n = Number(s);
+      if (!Number.isNaN(n) && n > 0) state.set(n, 'include');
+    }
+  }
+
+  const excludeParam = params.get('excludeTags');
+  if (excludeParam !== null && excludeParam.length > 0) {
+    for (const s of excludeParam.split(',')) {
+      const n = Number(s);
+      if (!Number.isNaN(n) && n > 0) state.set(n, 'exclude');
+    }
+  }
+
+  return state;
 }
 
-function getInitialTagMode(): 'and' | 'or' | 'not' {
+function getInitialTagMode(): 'and' | 'or' {
   const mode = getInitialSearchParams().get('tagMode');
-  if (mode === 'and' || mode === 'or' || mode === 'not') return mode;
+  if (mode === 'and' || mode === 'or') return mode;
   return 'or';
 }
 
@@ -126,17 +139,28 @@ function ImageListPage({
   onImageClick: (id: number) => void;
   onCompare: (imageIds: number[]) => void;
 }) {
-  const { tags, selectedTags, tagMode, setTagMode, toggleTag, createTag, deleteTag, refresh: refreshTags } = useTags({
-    initialSelectedTags: getInitialSelectedTags(),
+  const { tags, tagFilterState, tagMode, setTagMode, toggleTag, createTag, deleteTag, refresh: refreshTags } = useTags({
+    initialTagFilterState: getInitialTagFilterState(),
     initialTagMode: getInitialTagMode(),
   });
 
-  const imagesOptions = useMemo((): { limit?: number; tagIds?: number[]; tagMode?: 'and' | 'or' | 'not' } => {
-    if (selectedTags.size > 0) {
-      return { tagIds: Array.from(selectedTags), tagMode };
+  const imagesOptions = useMemo(() => {
+    const includeTagIds: number[] = [];
+    const excludeTagIds: number[] = [];
+    for (const [id, state] of tagFilterState) {
+      if (state === 'include') includeTagIds.push(id);
+      else excludeTagIds.push(id);
     }
-    return {};
-  }, [selectedTags, tagMode]);
+    const opts: { includeTagIds?: number[]; excludeTagIds?: number[]; tagMode?: 'and' | 'or' } = {};
+    if (includeTagIds.length > 0) {
+      opts.includeTagIds = includeTagIds;
+      opts.tagMode = tagMode;
+    }
+    if (excludeTagIds.length > 0) {
+      opts.excludeTagIds = excludeTagIds;
+    }
+    return opts;
+  }, [tagFilterState, tagMode]);
 
   const { images, loading, loadingMore, hasMore, error, refresh, loadMore } = useImages(imagesOptions);
   const { query, setQuery, results, loading: searchLoading, isActive } = useSearch(getInitialQuery());
@@ -156,16 +180,25 @@ function ImageListPage({
     if (query.length > 0) {
       params.set('q', query);
     }
-    if (selectedTags.size > 0) {
-      params.set('tags', Array.from(selectedTags).join(','));
+    const includeIds: number[] = [];
+    const excludeIds: number[] = [];
+    for (const [id, state] of tagFilterState) {
+      if (state === 'include') includeIds.push(id);
+      else excludeIds.push(id);
     }
-    if (selectedTags.size > 0 && tagMode !== 'or') {
+    if (includeIds.length > 0) {
+      params.set('includeTags', includeIds.join(','));
+    }
+    if (excludeIds.length > 0) {
+      params.set('excludeTags', excludeIds.join(','));
+    }
+    if (includeIds.length > 0 && tagMode !== 'or') {
       params.set('tagMode', tagMode);
     }
     const search = params.toString();
     const newUrl = search.length > 0 ? `/?${search}` : '/';
     window.history.replaceState(null, '', newUrl);
-  }, [query, selectedTags, tagMode]);
+  }, [query, tagFilterState, tagMode]);
 
   // Selection mode state
   const [selectionMode, setSelectionMode] = useState(false);
@@ -212,7 +245,7 @@ function ImageListPage({
       <div className="flex flex-1 overflow-hidden">
         <TagFilter
           tags={tags}
-          selectedTags={selectedTags}
+          tagFilterState={tagFilterState}
           tagMode={tagMode}
           onToggleTag={toggleTag}
           onTagModeChange={setTagMode}

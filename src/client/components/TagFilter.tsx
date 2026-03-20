@@ -4,17 +4,17 @@ import type { TagWithCount } from '../lib/api';
 
 interface TagFilterProps {
   tags: TagWithCount[];
-  selectedTags: Set<number>;
-  tagMode: 'and' | 'or' | 'not';
+  tagFilterState: Map<number, 'include' | 'exclude'>;
+  tagMode: 'and' | 'or';
   onToggleTag: (tagId: TagId) => void;
-  onTagModeChange: (mode: 'and' | 'or' | 'not') => void;
+  onTagModeChange: (mode: 'and' | 'or') => void;
   onCreateTag: (name: string) => Promise<void>;
   onDeleteTag: (id: TagId) => Promise<void>;
 }
 
 export function TagFilter({
   tags,
-  selectedTags,
+  tagFilterState,
   tagMode,
   onToggleTag,
   onTagModeChange,
@@ -42,11 +42,10 @@ export function TagFilter({
   };
 
   const handleToggleMode = () => {
-    const modes: ('or' | 'and' | 'not')[] = ['or', 'and', 'not'];
-    const currentIndex = modes.indexOf(tagMode);
-    const nextIndex = (currentIndex + 1) % modes.length;
-    onTagModeChange(modes[nextIndex] ?? 'or');
+    onTagModeChange(tagMode === 'or' ? 'and' : 'or');
   };
+
+  const hasInclude = Array.from(tagFilterState.values()).some((v) => v === 'include');
 
   return (
     <aside className="w-56 shrink-0 border-r border-gray-200 bg-gray-50 p-4">
@@ -55,7 +54,7 @@ export function TagFilter({
       </h2>
 
       {/* AND/OR toggle */}
-      {selectedTags.size > 0 ? (
+      {hasInclude ? (
         <div className="mb-3">
           <button
             type="button"
@@ -65,7 +64,7 @@ export function TagFilter({
             Mode: {tagMode.toUpperCase()}
           </button>
           <p className="mt-1 text-xs text-gray-400">
-            {tagMode === 'and' ? 'Match all selected tags' : tagMode === 'not' ? 'Exclude selected tags' : 'Match any selected tag'}
+            {tagMode === 'and' ? 'Match all included tags' : 'Match any included tag'}
           </p>
         </div>
       ) : null}
@@ -74,44 +73,57 @@ export function TagFilter({
         <p className="text-sm text-gray-400">No tags yet</p>
       ) : (
         <ul className="space-y-1">
-          {tags.map((tag) => (
-            <li key={tag.id} className="group flex items-center gap-2">
-              <label className="flex flex-1 cursor-pointer items-center gap-2 rounded px-2 py-1 text-sm text-gray-700 hover:bg-gray-100">
-                <input
-                  type="checkbox"
-                  checked={selectedTags.has(tag.id)}
-                  onChange={() => {
+          {tags.map((tag) => {
+            const state = tagFilterState.get(tag.id);
+            const isInclude = state === 'include';
+            const isExclude = state === 'exclude';
+
+            return (
+              <li key={tag.id} className="group flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
                     onToggleTag(tag.id);
                   }}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                />
-                <span className="truncate">{tag.name}</span>
-                <span className="ml-auto text-xs text-gray-400">({String(tag.image_count)})</span>
-              </label>
-              <button
-                type="button"
-                onClick={() => {
-                  void onDeleteTag(tag.id);
-                }}
-                className="invisible rounded p-1 text-gray-400 hover:text-red-500 group-hover:visible"
-                aria-label={`Delete tag ${tag.name}`}
-              >
-                <svg
-                  className="h-3.5 w-3.5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
+                  className={`flex flex-1 cursor-pointer items-center gap-2 rounded px-2 py-1 text-sm transition-colors ${
+                    isInclude
+                      ? 'border-l-4 border-blue-500 bg-blue-50 text-blue-700'
+                      : isExclude
+                        ? 'border-l-4 border-red-400 bg-red-50 text-red-500 line-through'
+                        : 'border-l-4 border-transparent text-gray-700 hover:bg-gray-100'
+                  }`}
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-              </button>
-            </li>
-          ))}
+                  <span className="w-4 shrink-0 text-center text-xs font-bold">
+                    {isInclude ? '+' : isExclude ? '-' : ''}
+                  </span>
+                  <span className="truncate">{tag.name}</span>
+                  <span className="ml-auto text-xs text-gray-400">({String(tag.image_count)})</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    void onDeleteTag(tag.id);
+                  }}
+                  className="invisible rounded p-1 text-gray-400 hover:text-red-500 group-hover:visible"
+                  aria-label={`Delete tag ${tag.name}`}
+                >
+                  <svg
+                    className="h-3.5 w-3.5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
+              </li>
+            );
+          })}
         </ul>
       )}
 

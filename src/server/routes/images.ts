@@ -13,8 +13,9 @@ const ListQuery = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(50),
   sort: z.string().optional(),
   order: z.string().optional(),
-  tags: z.string().optional(),
-  tagMode: z.enum(['and', 'or', 'not']).default('or'),
+  includeTags: z.string().optional(),
+  excludeTags: z.string().optional(),
+  tagMode: z.enum(['and', 'or']).default('or'),
 });
 
 const images = new Hono();
@@ -25,10 +26,10 @@ images.get('/', (c) => {
   if (!parsed.success) {
     return c.json({ error: parsed.error.issues }, 400);
   }
-  const { page, limit, sort, order, tags: tagsParam, tagMode } = parsed.data;
+  const { page, limit, sort, order, includeTags, excludeTags, tagMode } = parsed.data;
   const offset = (page - 1) * limit;
   const db = getDb();
-  const listOptions: { limit: number; offset: number; sort?: SortColumn; order?: SortOrder; tagIds?: number[]; tagMode?: 'and' | 'or' | 'not' } = { limit, offset };
+  const listOptions: { limit: number; offset: number; sort?: SortColumn; order?: SortOrder; includeTagIds?: number[]; excludeTagIds?: number[]; tagMode?: 'and' | 'or' } = { limit, offset };
   if (typeof sort === 'string' && isSortColumn(sort)) {
     listOptions.sort = sort;
   }
@@ -36,24 +37,41 @@ images.get('/', (c) => {
     listOptions.order = order;
   }
 
-  // Parse tag IDs from comma-separated string
-  if (typeof tagsParam === 'string' && tagsParam.length > 0) {
-    const tagIdResults = tagsParam.split(',').map((s) => z.coerce.number().int().positive().safeParse(s.trim()));
+  // Parse include tag IDs from comma-separated string
+  if (typeof includeTags === 'string' && includeTags.length > 0) {
+    const tagIdResults = includeTags.split(',').map((s) => z.coerce.number().int().positive().safeParse(s.trim()));
     const validTagIds: number[] = [];
     for (const result of tagIdResults) {
       if (!result.success) {
-        return c.json({ error: 'Invalid tag ID in tags parameter' }, 400);
+        return c.json({ error: 'Invalid tag ID in includeTags parameter' }, 400);
       }
       validTagIds.push(result.data);
     }
-    listOptions.tagIds = validTagIds;
+    listOptions.includeTagIds = validTagIds;
+    listOptions.tagMode = tagMode;
+  }
+
+  // Parse exclude tag IDs from comma-separated string
+  if (typeof excludeTags === 'string' && excludeTags.length > 0) {
+    const tagIdResults = excludeTags.split(',').map((s) => z.coerce.number().int().positive().safeParse(s.trim()));
+    const validTagIds: number[] = [];
+    for (const result of tagIdResults) {
+      if (!result.success) {
+        return c.json({ error: 'Invalid tag ID in excludeTags parameter' }, 400);
+      }
+      validTagIds.push(result.data);
+    }
+    listOptions.excludeTagIds = validTagIds;
     listOptions.tagMode = tagMode;
   }
 
   const rows = getAllImages(db, listOptions);
-  const countOptions: { tagIds?: number[]; tagMode?: 'and' | 'or' | 'not' } = {};
-  if (listOptions.tagIds) {
-    countOptions.tagIds = listOptions.tagIds;
+  const countOptions: { includeTagIds?: number[]; excludeTagIds?: number[]; tagMode?: 'and' | 'or' } = {};
+  if (listOptions.includeTagIds) {
+    countOptions.includeTagIds = listOptions.includeTagIds;
+  }
+  if (listOptions.excludeTagIds) {
+    countOptions.excludeTagIds = listOptions.excludeTagIds;
   }
   if (listOptions.tagMode) {
     countOptions.tagMode = listOptions.tagMode;

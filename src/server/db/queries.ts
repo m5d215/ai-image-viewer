@@ -13,8 +13,9 @@ interface ListOptions {
   offset: number;
   sort?: SortColumn;
   order?: SortOrder;
-  tagIds?: number[];
-  tagMode?: 'and' | 'or' | 'not';
+  includeTagIds?: number[];
+  excludeTagIds?: number[];
+  tagMode?: 'and' | 'or';
 }
 
 export function isSortColumn(value: string): value is SortColumn {
@@ -32,41 +33,55 @@ interface TagFilter {
   params: number[];
 }
 
-function buildTagFilter(tagIds: number[], tagMode: 'and' | 'or' | 'not'): TagFilter {
-  // tagIds are already validated as numbers by zod
-  const placeholders = tagIds.map((_, i) => `?${String(i + 1)}`).join(', ');
+function buildCombinedTagFilter(
+  includeTagIds: number[],
+  excludeTagIds: number[],
+  includeMode: 'and' | 'or',
+): TagFilter {
+  const params: number[] = [];
+  let paramIndex = 1;
 
-  if (tagMode === 'not') {
-    return {
-      join: '',
-      where: `WHERE images.id NOT IN (SELECT image_id FROM image_tags WHERE tag_id IN (${placeholders}))`,
-      groupBy: '',
-      params: tagIds,
-    };
+  let join = '';
+  const whereClauses: string[] = [];
+  let groupBy = '';
+
+  // Include filter
+  if (includeTagIds.length > 0) {
+    const includePlaceholders = includeTagIds.map((_, i) => `?${String(paramIndex + i)}`).join(', ');
+    paramIndex += includeTagIds.length;
+    params.push(...includeTagIds);
+
+    join = 'JOIN image_tags ON images.id = image_tags.image_id';
+    whereClauses.push(`image_tags.tag_id IN (${includePlaceholders})`);
+
+    if (includeMode === 'and') {
+      groupBy = `GROUP BY images.id HAVING COUNT(DISTINCT image_tags.tag_id) = ${String(includeTagIds.length)}`;
+    }
   }
-  if (tagMode === 'and') {
-    return {
-      join: 'JOIN image_tags ON images.id = image_tags.image_id',
-      where: `WHERE image_tags.tag_id IN (${placeholders})`,
-      groupBy: `GROUP BY images.id HAVING COUNT(DISTINCT image_tags.tag_id) = ${String(tagIds.length)}`,
-      params: tagIds,
-    };
+
+  // Exclude filter
+  if (excludeTagIds.length > 0) {
+    const excludePlaceholders = excludeTagIds.map((_, i) => `?${String(paramIndex + i)}`).join(', ');
+    paramIndex += excludeTagIds.length;
+    params.push(...excludeTagIds);
+
+    whereClauses.push(`images.id NOT IN (SELECT image_id FROM image_tags WHERE tag_id IN (${excludePlaceholders}))`);
   }
-  return {
-    join: 'JOIN image_tags ON images.id = image_tags.image_id',
-    where: `WHERE image_tags.tag_id IN (${placeholders})`,
-    groupBy: '',
-    params: tagIds,
-  };
+
+  const where = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
+
+  return { join, where, groupBy, params };
 }
 
 export function getAllImages(db: Database, options: ListOptions): z.infer<typeof ImageRow>[] {
   const column = options.sort ?? 'created_at';
   const order = options.order ?? 'desc';
 
-  if (options.tagIds && options.tagIds.length > 0) {
+  const includeTagIds = options.includeTagIds ?? [];
+  const excludeTagIds = options.excludeTagIds ?? [];
+  if (includeTagIds.length > 0 || excludeTagIds.length > 0) {
     const mode = options.tagMode ?? 'or';
-    const filter = buildTagFilter(options.tagIds, mode);
+    const filter = buildCombinedTagFilter(includeTagIds, excludeTagIds, mode);
     const paramOffset = filter.params.length;
     const sql = `SELECT DISTINCT images.* FROM images ${filter.join} ${filter.where} ${filter.groupBy} ORDER BY images.${column} ${order} LIMIT ?${String(paramOffset + 1)} OFFSET ?${String(paramOffset + 2)}`;
     const rows: unknown[] = db.query(sql).all(...filter.params, options.limit, options.offset);
@@ -79,12 +94,14 @@ export function getAllImages(db: Database, options: ListOptions): z.infer<typeof
   return rows.map((row) => ImageRow.parse(row));
 }
 
-export function countImages(db: Database, options?: { tagIds?: number[]; tagMode?: 'and' | 'or' | 'not' }): number {
-  if (options?.tagIds && options.tagIds.length > 0) {
-    const mode = options.tagMode ?? 'or';
-    const filter = buildTagFilter(options.tagIds, mode);
+export function countImages(db: Database, options?: { includeTagIds?: number[]; excludeTagIds?: number[]; tagMode?: 'and' | 'or' }): number {
+  const includeTagIds = options?.includeTagIds ?? [];
+  const excludeTagIds = options?.excludeTagIds ?? [];
+  if (includeTagIds.length > 0 || excludeTagIds.length > 0) {
+    const mode = options?.tagMode ?? 'or';
+    const filter = buildCombinedTagFilter(includeTagIds, excludeTagIds, mode);
 
-    if (mode === 'and') {
+    if (filter.groupBy !== '') {
       const sql = `SELECT COUNT(*) as count FROM (SELECT images.id FROM images ${filter.join} ${filter.where} ${filter.groupBy})`;
       const row = db.query(sql).get(...filter.params);
       return z.object({ count: z.number() }).parse(row).count;

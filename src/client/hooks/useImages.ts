@@ -4,8 +4,9 @@ import { fetchImages } from '../lib/api';
 
 interface UseImagesOptions {
   limit?: number;
-  tagIds?: number[];
-  tagMode?: 'and' | 'or' | 'not';
+  includeTagIds?: number[];
+  excludeTagIds?: number[];
+  tagMode?: 'and' | 'or';
 }
 
 interface UseImagesReturn {
@@ -74,7 +75,7 @@ const initialState: State = {
 };
 
 export function useImages(options: UseImagesOptions = {}): UseImagesReturn {
-  const { limit = 50, tagIds, tagMode } = options;
+  const { limit = 50, includeTagIds, excludeTagIds, tagMode } = options;
   const [state, dispatch] = useReducer(reducer, initialState);
 
   const refresh = useCallback(() => {
@@ -86,12 +87,13 @@ export function useImages(options: UseImagesOptions = {}): UseImagesReturn {
   }, []);
 
   // Serialize tagIds for stable dependency comparison
-  const tagIdsKey = tagIds !== undefined ? tagIds.join(',') : '';
+  const includeTagIdsKey = includeTagIds !== undefined ? includeTagIds.join(',') : '';
+  const excludeTagIdsKey = excludeTagIds !== undefined ? excludeTagIds.join(',') : '';
 
   // Reset when filter params change
   useEffect(() => {
     dispatch({ type: 'reset' });
-  }, [tagIdsKey, tagMode]);
+  }, [includeTagIdsKey, excludeTagIdsKey, tagMode]);
 
   useEffect(() => {
     let cancelled = false;
@@ -99,7 +101,7 @@ export function useImages(options: UseImagesOptions = {}): UseImagesReturn {
 
     dispatch({ type: 'fetchStart', page: currentPage });
 
-    fetchImages(currentPage, limit, undefined, tagIds, tagMode)
+    fetchImages(currentPage, limit, undefined, includeTagIds, excludeTagIds, tagMode)
       .then((result) => {
         if (!cancelled) {
           dispatch({ type: 'fetchSuccess', data: result.data, total: result.total, page: currentPage });
@@ -115,7 +117,7 @@ export function useImages(options: UseImagesOptions = {}): UseImagesReturn {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.page, limit, tagIdsKey, tagMode, state.refreshKey]);
+  }, [state.page, limit, includeTagIdsKey, excludeTagIdsKey, tagMode, state.refreshKey]);
 
   const hasMore = state.total > state.images.length;
 

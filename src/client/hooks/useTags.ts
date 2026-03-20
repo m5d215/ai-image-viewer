@@ -7,12 +7,14 @@ import {
   deleteTag as apiDeleteTag,
 } from '../lib/api';
 
+type TagState = 'include' | 'exclude';
+
 interface UseTagsReturn {
   tags: TagWithCount[];
   loading: boolean;
-  selectedTags: Set<number>;
-  tagMode: 'and' | 'or' | 'not';
-  setTagMode: (mode: 'and' | 'or' | 'not') => void;
+  tagFilterState: Map<number, TagState>;
+  tagMode: 'and' | 'or';
+  setTagMode: (mode: 'and' | 'or') => void;
   toggleTag: (tagId: TagId) => void;
   createTag: (name: string) => Promise<void>;
   deleteTag: (id: TagId) => Promise<void>;
@@ -20,13 +22,13 @@ interface UseTagsReturn {
 }
 
 export function useTags(options?: {
-  initialSelectedTags?: Set<number>;
-  initialTagMode?: 'and' | 'or' | 'not';
+  initialTagFilterState?: Map<number, TagState>;
+  initialTagMode?: 'and' | 'or';
 }): UseTagsReturn {
   const [tags, setTags] = useState<TagWithCount[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedTags, setSelectedTags] = useState<Set<number>>(options?.initialSelectedTags ?? new Set());
-  const [tagMode, setTagMode] = useState<'and' | 'or' | 'not'>(options?.initialTagMode ?? 'or');
+  const [tagFilterState, setTagFilterState] = useState<Map<number, TagState>>(options?.initialTagFilterState ?? new Map());
+  const [tagMode, setTagMode] = useState<'and' | 'or'>(options?.initialTagMode ?? 'or');
   const [refreshKey, incrementRefreshKey] = useReducer((c: number) => c + 1, 0);
 
   useEffect(() => {
@@ -51,12 +53,15 @@ export function useTags(options?: {
   }, [refreshKey]);
 
   const toggleTag = useCallback((tagId: TagId) => {
-    setSelectedTags((prev) => {
-      const next = new Set(prev);
-      if (next.has(tagId)) {
-        next.delete(tagId);
+    setTagFilterState((prev) => {
+      const next = new Map(prev);
+      const current = next.get(tagId);
+      if (current === undefined) {
+        next.set(tagId, 'include');
+      } else if (current === 'include') {
+        next.set(tagId, 'exclude');
       } else {
-        next.add(tagId);
+        next.delete(tagId);
       }
       return next;
     });
@@ -73,8 +78,8 @@ export function useTags(options?: {
   const deleteTag = useCallback(
     async (id: TagId): Promise<void> => {
       await apiDeleteTag(id);
-      setSelectedTags((prev) => {
-        const next = new Set(prev);
+      setTagFilterState((prev) => {
+        const next = new Map(prev);
         next.delete(id);
         return next;
       });
@@ -83,5 +88,5 @@ export function useTags(options?: {
     [],
   );
 
-  return { tags, loading, selectedTags, tagMode, setTagMode, toggleTag, createTag, deleteTag, refresh: incrementRefreshKey };
+  return { tags, loading, tagFilterState, tagMode, setTagMode, toggleTag, createTag, deleteTag, refresh: incrementRefreshKey };
 }
