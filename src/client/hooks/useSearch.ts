@@ -16,7 +16,7 @@ export function useSearch(initialQuery = '', limit = 50): UseSearchReturn {
   const [results, setResults] = useState<ImageRow[]>([]);
   // Track which query the current results correspond to. When this differs
   // from debouncedQuery, a fetch is in-flight → loading.
-  const [settledQuery, setSettledQuery] = useState('');
+  const [settledQuery, setSettledQuery] = useState(initialQuery);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Monotonically increasing request ID — StrictMode safe because only the
   // latest request's callback will match, regardless of how many times the
@@ -44,6 +44,9 @@ export function useSearch(initialQuery = '', limit = 50): UseSearchReturn {
   // Fetch search results when debounced query changes
   useEffect(() => {
     if (!isActive) {
+      // Invalidate any pending request so its response won't flash stale
+      // results during the debounce window when clearing the search.
+      ++requestIdRef.current;
       return;
     }
 
