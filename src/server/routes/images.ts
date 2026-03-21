@@ -86,10 +86,38 @@ images.get('/search', (c) => {
   if (!parsed.success) {
     return c.json({ error: parsed.error.issues }, 400);
   }
-  const { q, page, limit } = parsed.data;
+  const { q, page, limit, includeTags, excludeTags, tagMode } = parsed.data;
   const offset = (page - 1) * limit;
   const db = getDb();
-  const result = searchImages(db, q, limit, offset);
+  const searchOptions: { query: string; limit: number; offset: number; includeTagIds?: number[]; excludeTagIds?: number[]; tagMode?: 'and' | 'or' } = { query: q, limit, offset };
+
+  if (typeof includeTags === 'string' && includeTags.length > 0) {
+    const tagIdResults = includeTags.split(',').map((s) => z.coerce.number().int().positive().safeParse(s.trim()));
+    const validTagIds: number[] = [];
+    for (const result of tagIdResults) {
+      if (!result.success) {
+        return c.json({ error: 'Invalid tag ID in includeTags parameter' }, 400);
+      }
+      validTagIds.push(result.data);
+    }
+    searchOptions.includeTagIds = validTagIds;
+    searchOptions.tagMode = tagMode;
+  }
+
+  if (typeof excludeTags === 'string' && excludeTags.length > 0) {
+    const tagIdResults = excludeTags.split(',').map((s) => z.coerce.number().int().positive().safeParse(s.trim()));
+    const validTagIds: number[] = [];
+    for (const result of tagIdResults) {
+      if (!result.success) {
+        return c.json({ error: 'Invalid tag ID in excludeTags parameter' }, 400);
+      }
+      validTagIds.push(result.data);
+    }
+    searchOptions.excludeTagIds = validTagIds;
+    searchOptions.tagMode = tagMode;
+  }
+
+  const result = searchImages(db, searchOptions);
   return c.json({ data: result.data, total: result.total, page, limit });
 });
 

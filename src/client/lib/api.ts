@@ -94,12 +94,24 @@ export async function searchImages(
   query: string,
   page: number,
   limit: number,
+  includeTagIds?: number[],
+  excludeTagIds?: number[],
+  tagMode?: 'and' | 'or',
 ): Promise<z.infer<typeof ImageListResponse>> {
   const params = new URLSearchParams({
     q: query,
     page: String(page),
     limit: String(limit),
   });
+  if (includeTagIds !== undefined && includeTagIds.length > 0) {
+    params.set('includeTags', includeTagIds.join(','));
+  }
+  if (excludeTagIds !== undefined && excludeTagIds.length > 0) {
+    params.set('excludeTags', excludeTagIds.join(','));
+  }
+  if (tagMode !== undefined) {
+    params.set('tagMode', tagMode);
+  }
   const data = await request(`/api/images/search?${params.toString()}`);
   return ImageListResponse.parse(data);
 }

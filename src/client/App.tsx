@@ -163,7 +163,12 @@ function ImageListPage({
   }, [tagFilterState, tagMode]);
 
   const { images, loading, loadingMore, hasMore, error, refresh, loadMore } = useImages(imagesOptions);
-  const { query, setQuery, results, loading: searchLoading, isActive } = useSearch(getInitialQuery());
+  const { query, setQuery, results, loading: searchLoading, isActive } = useSearch({
+    initialQuery: getInitialQuery(),
+    includeTagIds: imagesOptions.includeTagIds,
+    excludeTagIds: imagesOptions.excludeTagIds,
+    tagMode: imagesOptions.tagMode,
+  });
 
   const displayImages = isActive ? results : images;
 

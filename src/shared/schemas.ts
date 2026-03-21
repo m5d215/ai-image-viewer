@@ -41,6 +41,9 @@ export const SearchQuery = z.object({
   q: z.string().min(1).max(500),
   page: z.coerce.number().int().positive().default(1),
   limit: z.coerce.number().int().min(1).max(100).default(50),
+  includeTags: z.string().optional(),
+  excludeTags: z.string().optional(),
+  tagMode: z.enum(['and', 'or']).default('or'),
 });
 
 export const ImagePatchBody = z.object({

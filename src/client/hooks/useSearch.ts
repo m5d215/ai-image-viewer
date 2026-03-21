@@ -2,6 +2,14 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import type { ImageRow } from '@/shared/types';
 import { searchImages } from '../lib/api';
 
+interface UseSearchOptions {
+  initialQuery?: string | undefined;
+  limit?: number | undefined;
+  includeTagIds?: number[] | undefined;
+  excludeTagIds?: number[] | undefined;
+  tagMode?: 'and' | 'or' | undefined;
+}
+
 interface UseSearchReturn {
   query: string;
   setQuery: (query: string) => void;
@@ -10,7 +18,8 @@ interface UseSearchReturn {
   isActive: boolean;
 }
 
-export function useSearch(initialQuery = '', limit = 50): UseSearchReturn {
+export function useSearch(options: UseSearchOptions = {}): UseSearchReturn {
+  const { initialQuery = '', limit = 50, includeTagIds, excludeTagIds, tagMode } = options;
   const [query, setQuery] = useState(initialQuery);
   const [debouncedQuery, setDebouncedQuery] = useState(initialQuery);
   const [results, setResults] = useState<ImageRow[]>([]);
@@ -41,7 +50,11 @@ export function useSearch(initialQuery = '', limit = 50): UseSearchReturn {
 
   const isActive = debouncedQuery.length > 0;
 
-  // Fetch search results when debounced query changes
+  // Stable keys for tag filter arrays to use in effect deps
+  const includeKey = includeTagIds?.join(',') ?? '';
+  const excludeKey = excludeTagIds?.join(',') ?? '';
+
+  // Fetch search results when debounced query or tag filters change
   useEffect(() => {
     if (!isActive) {
       // Invalidate any pending request so its response won't flash stale
@@ -52,7 +65,7 @@ export function useSearch(initialQuery = '', limit = 50): UseSearchReturn {
 
     const id = ++requestIdRef.current;
 
-    searchImages(debouncedQuery, 1, limit)
+    searchImages(debouncedQuery, 1, limit, includeTagIds, excludeTagIds, tagMode)
       .then((response) => {
         if (id === requestIdRef.current) {
           setResults(response.data);
@@ -65,7 +78,8 @@ export function useSearch(initialQuery = '', limit = 50): UseSearchReturn {
           setSettledQuery(debouncedQuery);
         }
       });
-  }, [debouncedQuery, limit, isActive]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- use stable string keys instead of array refs
+  }, [debouncedQuery, limit, isActive, includeKey, excludeKey, tagMode]);
 
   // Derive display state — avoids synchronous setState in effects for the
   // inactive case and prevents stale results from flashing.

@@ -33,13 +33,14 @@ interface TagFilter {
   params: number[];
 }
 
-function buildCombinedTagFilter(
+export function buildCombinedTagFilter(
   includeTagIds: number[],
   excludeTagIds: number[],
   includeMode: 'and' | 'or',
+  startIndex = 1,
 ): TagFilter {
   const params: number[] = [];
-  let paramIndex = 1;
+  let paramIndex = startIndex;
 
   let join = '';
   const whereClauses: string[] = [];
