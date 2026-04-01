@@ -8,7 +8,8 @@
     "build": "vite build",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "cli": "bun run src/cli.ts"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
