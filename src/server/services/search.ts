@@ -18,10 +18,7 @@ interface SearchOptions {
   tagMode?: 'and' | 'or';
 }
 
-export function searchImages(
-  db: Database,
-  options: SearchOptions,
-): SearchResult {
+export function searchImages(db: Database, options: SearchOptions): SearchResult {
   const { query, limit, offset, includeTagIds = [], excludeTagIds = [], tagMode = 'or' } = options;
 
   if (includeTagIds.length > 0 || excludeTagIds.length > 0) {
@@ -31,7 +28,8 @@ export function searchImages(
 
     const matchClause = 'images_fts MATCH ?1';
     const tagWhere = filter.where.replace(/^WHERE /, '');
-    const fullWhere = tagWhere.length > 0 ? `WHERE ${matchClause} AND ${tagWhere}` : `WHERE ${matchClause}`;
+    const fullWhere =
+      tagWhere.length > 0 ? `WHERE ${matchClause} AND ${tagWhere}` : `WHERE ${matchClause}`;
 
     const dataSql = `SELECT DISTINCT images.* FROM images
        JOIN images_fts ON images.id = images_fts.rowid

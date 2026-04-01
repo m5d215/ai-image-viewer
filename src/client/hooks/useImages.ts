@@ -43,9 +43,26 @@ type Action =
 function reducer(state: State, action: Action): State {
   switch (action.type) {
     case 'reset':
-      return { ...state, images: [], total: 0, page: 1, loading: true, loadingMore: false, error: null };
+      return {
+        ...state,
+        images: [],
+        total: 0,
+        page: 1,
+        loading: true,
+        loadingMore: false,
+        error: null,
+      };
     case 'refresh':
-      return { ...state, images: [], total: 0, page: 1, loading: true, loadingMore: false, error: null, refreshKey: state.refreshKey + 1 };
+      return {
+        ...state,
+        images: [],
+        total: 0,
+        page: 1,
+        loading: true,
+        loadingMore: false,
+        error: null,
+        refreshKey: state.refreshKey + 1,
+      };
     case 'loadMore':
       if (state.loadingMore || state.loading) return state;
       return { ...state, page: state.page + 1 };
@@ -56,9 +73,20 @@ function reducer(state: State, action: Action): State {
       return { ...state, loadingMore: true, error: null };
     case 'fetchSuccess':
       if (action.page === 1) {
-        return { ...state, images: action.data, total: action.total, loading: false, loadingMore: false };
+        return {
+          ...state,
+          images: action.data,
+          total: action.total,
+          loading: false,
+          loadingMore: false,
+        };
       }
-      return { ...state, images: [...state.images, ...action.data], total: action.total, loadingMore: false };
+      return {
+        ...state,
+        images: [...state.images, ...action.data],
+        total: action.total,
+        loadingMore: false,
+      };
     case 'fetchError':
       return { ...state, error: action.error, loading: false, loadingMore: false };
   }
@@ -104,12 +132,20 @@ export function useImages(options: UseImagesOptions = {}): UseImagesReturn {
     fetchImages(currentPage, limit, undefined, includeTagIds, excludeTagIds, tagMode)
       .then((result) => {
         if (!cancelled) {
-          dispatch({ type: 'fetchSuccess', data: result.data, total: result.total, page: currentPage });
+          dispatch({
+            type: 'fetchSuccess',
+            data: result.data,
+            total: result.total,
+            page: currentPage,
+          });
         }
       })
       .catch((err: unknown) => {
         if (!cancelled) {
-          dispatch({ type: 'fetchError', error: err instanceof Error ? err.message : 'Unknown error' });
+          dispatch({
+            type: 'fetchError',
+            error: err instanceof Error ? err.message : 'Unknown error',
+          });
         }
       });
 

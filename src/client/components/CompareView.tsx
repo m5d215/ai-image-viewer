@@ -57,7 +57,11 @@ function diffWords(a: string, b: string): DiffSegment[] {
       stack.push({ text: wordA, type: 'same' });
       i--;
       j--;
-    } else if (j > 0 && wordB !== undefined && (i === 0 || getCell(dp, i, j - 1) >= getCell(dp, i - 1, j))) {
+    } else if (
+      j > 0 &&
+      wordB !== undefined &&
+      (i === 0 || getCell(dp, i, j - 1) >= getCell(dp, i - 1, j))
+    ) {
       stack.push({ text: wordB, type: 'added' });
       j--;
     } else if (i > 0 && wordA !== undefined) {
@@ -102,9 +106,7 @@ function ImageCard({ image }: { image: ImageWithTags }) {
       {/* Info */}
       <div className="space-y-4 p-4">
         {/* Title */}
-        <h3 className="text-base font-semibold text-gray-900">
-          {image.title ?? image.file_name}
-        </h3>
+        <h3 className="text-base font-semibold text-gray-900">{image.title ?? image.file_name}</h3>
 
         {/* Metadata */}
         <dl className="space-y-1 text-sm">
@@ -206,11 +208,7 @@ function PromptDiff({ images }: { images: ImageWithTags[] }) {
               </span>
             );
           }
-          return (
-            <span key={index}>
-              {segment.text}{' '}
-            </span>
-          );
+          return <span key={index}>{segment.text} </span>;
         })}
       </p>
     </div>
@@ -229,17 +227,13 @@ export function CompareView({ imageIds, onBack }: CompareViewProps) {
       setLoading(true);
       setError(null);
       try {
-        const results = await Promise.all(
-          imageIds.map((id) => fetchImage(id)),
-        );
+        const results = await Promise.all(imageIds.map((id) => fetchImage(id)));
         if (!cancelled) {
           setImages(results);
         }
       } catch (err: unknown) {
         if (!cancelled) {
-          setError(
-            err instanceof Error ? err.message : 'Failed to load images',
-          );
+          setError(err instanceof Error ? err.message : 'Failed to load images');
         }
       } finally {
         if (!cancelled) {

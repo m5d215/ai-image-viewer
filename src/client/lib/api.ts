@@ -1,7 +1,12 @@
 import { z } from 'zod';
 import { ImageRow, TagRow, ImageWithTags, SyncResult } from '@/shared/schemas';
 import { ImageId, TagId, TagName } from '@/shared/brands';
-import type { ImageRow as ImageRowType, ImageWithTags as ImageWithTagsType, TagRow as TagRowType, SyncResult as SyncResultType } from '@/shared/types';
+import type {
+  ImageRow as ImageRowType,
+  ImageWithTags as ImageWithTagsType,
+  TagRow as TagRowType,
+  SyncResult as SyncResultType,
+} from '@/shared/types';
 
 // --- Response schemas ---
 
@@ -116,10 +121,7 @@ export async function searchImages(
   return ImageListResponse.parse(data);
 }
 
-export async function updateImage(
-  id: number,
-  body: { title?: string },
-): Promise<ImageRowType> {
+export async function updateImage(id: number, body: { title?: string }): Promise<ImageRowType> {
   const parsedId = ImageId.parse(id);
   const raw = await request(`/api/images/${String(parsedId)}`, {
     method: 'PATCH',
@@ -152,10 +154,7 @@ export async function fetchTags(): Promise<TagWithCount[]> {
   return TagListResponse.parse(raw).data;
 }
 
-export async function bulkAddTag(
-  imageIds: number[],
-  tagId: number,
-): Promise<void> {
+export async function bulkAddTag(imageIds: number[], tagId: number): Promise<void> {
   const parsedTagId = TagId.parse(tagId);
   await request('/api/images/bulk/tags', {
     method: 'POST',
@@ -183,10 +182,7 @@ export async function deleteTag(id: number): Promise<void> {
   await request(`/api/tags/${String(parsedId)}`, { method: 'DELETE' });
 }
 
-export async function addTagToImage(
-  imageId: number,
-  tagId: number,
-): Promise<void> {
+export async function addTagToImage(imageId: number, tagId: number): Promise<void> {
   const parsedImageId = ImageId.parse(imageId);
   const parsedTagId = TagId.parse(tagId);
   await request(`/api/images/${String(parsedImageId)}/tags`, {
@@ -196,14 +192,10 @@ export async function addTagToImage(
   });
 }
 
-export async function removeTagFromImage(
-  imageId: number,
-  tagId: number,
-): Promise<void> {
+export async function removeTagFromImage(imageId: number, tagId: number): Promise<void> {
   const parsedImageId = ImageId.parse(imageId);
   const parsedTagId = TagId.parse(tagId);
-  await request(
-    `/api/images/${String(parsedImageId)}/tags/${String(parsedTagId)}`,
-    { method: 'DELETE' },
-  );
+  await request(`/api/images/${String(parsedImageId)}/tags/${String(parsedTagId)}`, {
+    method: 'DELETE',
+  });
 }

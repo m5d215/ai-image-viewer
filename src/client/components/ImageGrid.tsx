@@ -14,7 +14,10 @@ interface ImageGridProps {
   loadingMore: boolean;
 }
 
-function useColumnCount(containerRef: React.RefObject<HTMLDivElement | null>): { columns: number; containerWidth: number } {
+function useColumnCount(containerRef: React.RefObject<HTMLDivElement | null>): {
+  columns: number;
+  containerWidth: number;
+} {
   const [columns, setColumns] = useState(4);
   const [containerWidth, setContainerWidth] = useState(0);
 
@@ -131,7 +134,16 @@ function VirtualGrid({
   );
 }
 
-export function ImageGrid({ images, onImageClick, selectionMode, selectedImages, onToggleSelect, hasMore, loadMore, loadingMore }: ImageGridProps) {
+export function ImageGrid({
+  images,
+  onImageClick,
+  selectionMode,
+  selectedImages,
+  onToggleSelect,
+  hasMore,
+  loadMore,
+  loadingMore,
+}: ImageGridProps) {
   const parentRef = useRef<HTMLDivElement>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
   const { columns, containerWidth } = useColumnCount(parentRef);
@@ -160,9 +172,7 @@ export function ImageGrid({ images, onImageClick, selectionMode, selectedImages,
 
   if (images.length === 0) {
     return (
-      <div className="flex h-64 items-center justify-center text-gray-500">
-        No images found
-      </div>
+      <div className="flex h-64 items-center justify-center text-gray-500">No images found</div>
     );
   }
 

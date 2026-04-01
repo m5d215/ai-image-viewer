@@ -31,22 +31,28 @@ export default tseslint.config(
       '@typescript-eslint/no-import-type-side-effects': 'error',
 
       // --- 未使用コード検出 ---
-      '@typescript-eslint/no-unused-vars': ['error', {
-        argsIgnorePattern: '^_',
-        varsIgnorePattern: '^_',
-      }],
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+        },
+      ],
 
       // --- asキャスト禁止（Branded Types強制） ---
-      '@typescript-eslint/consistent-type-assertions': ['error', {
-        assertionStyle: 'never',
-      }],
+      '@typescript-eslint/consistent-type-assertions': [
+        'error',
+        {
+          assertionStyle: 'never',
+        },
+      ],
 
       // --- その他 ---
       '@typescript-eslint/no-floating-promises': 'error',
       '@typescript-eslint/await-thenable': 'error',
       '@typescript-eslint/require-await': 'error',
       'no-console': ['warn', { allow: ['warn', 'error'] }],
-      'eqeqeq': ['error', 'always'],
+      eqeqeq: ['error', 'always'],
     },
   },
   {

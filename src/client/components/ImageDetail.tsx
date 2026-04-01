@@ -1,11 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { TagRow, TagId, ImageWithTags } from '@/shared/types';
-import {
-  fetchImage,
-  fetchTags,
-  addTagToImage,
-  removeTagFromImage,
-} from '../lib/api';
+import { fetchImage, fetchTags, addTagToImage, removeTagFromImage } from '../lib/api';
 
 interface ImageDetailProps {
   imageId: number;
@@ -23,10 +18,7 @@ export function ImageDetail({ imageId, onBack }: ImageDetailProps) {
     setLoading(true);
     setError(null);
     try {
-      const [imageData, tagsData] = await Promise.all([
-        fetchImage(imageId),
-        fetchTags(),
-      ]);
+      const [imageData, tagsData] = await Promise.all([fetchImage(imageId), fetchTags()]);
       setImage(imageData);
       setAllTags(tagsData);
       setImageTags(imageData.tags);
@@ -106,9 +98,7 @@ export function ImageDetail({ imageId, onBack }: ImageDetailProps) {
         >
           Back
         </button>
-        <h1 className="text-lg font-semibold text-gray-900">
-          {image.title ?? image.file_name}
-        </h1>
+        <h1 className="text-lg font-semibold text-gray-900">{image.title ?? image.file_name}</h1>
       </div>
 
       {/* Content */}
@@ -148,15 +138,11 @@ export function ImageDetail({ imageId, onBack }: ImageDetailProps) {
               </div>
               <div>
                 <dt className="text-gray-500">Modified</dt>
-                <dd className="text-gray-900">
-                  {new Date(image.file_mtime).toLocaleString()}
-                </dd>
+                <dd className="text-gray-900">{new Date(image.file_mtime).toLocaleString()}</dd>
               </div>
               <div>
                 <dt className="text-gray-500">Added</dt>
-                <dd className="text-gray-900">
-                  {new Date(image.created_at).toLocaleString()}
-                </dd>
+                <dd className="text-gray-900">{new Date(image.created_at).toLocaleString()}</dd>
               </div>
             </dl>
           </section>

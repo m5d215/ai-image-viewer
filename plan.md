@@ -8,20 +8,20 @@
 
 ## 技術スタック
 
-| レイヤー | 技術 | 理由 |
-|---|---|---|
-| ランタイム | Bun | TS統一、SQLiteネイティブサポート、高速 |
-| バックエンド | Hono | 軽量、Bunとの親和性、型安全 |
-| フロントエンド | React + Tailwind CSS | 仮想スクロールのエコシステム、Claude Codeとの相性 |
-| ビルド | Vite | React開発のデファクト |
-| DB | SQLite (bun:sqlite) | ローカル完結、FTS5で全文検索 |
-| EXIF解析 | exifr | TS製、非同期、幅広いタグ対応 |
-| サムネイル | sharp | 高速、WebP出力対応 |
-| 仮想スクロール | @tanstack/react-virtual | 軽量、柔軟 |
-| バリデーション | zod | ランタイム型検証、Branded Types基盤 |
-| リンター | ESLint (flat config) + typescript-eslint | 厳格な静的解析 |
-| フォーマッター | Prettier | コードスタイル統一 |
-| コンテナ | Docker + Compose | 実行環境の再現性、Bun不要のデプロイ |
+| レイヤー       | 技術                                     | 理由                                              |
+| -------------- | ---------------------------------------- | ------------------------------------------------- |
+| ランタイム     | Bun                                      | TS統一、SQLiteネイティブサポート、高速            |
+| バックエンド   | Hono                                     | 軽量、Bunとの親和性、型安全                       |
+| フロントエンド | React + Tailwind CSS                     | 仮想スクロールのエコシステム、Claude Codeとの相性 |
+| ビルド         | Vite                                     | React開発のデファクト                             |
+| DB             | SQLite (bun:sqlite)                      | ローカル完結、FTS5で全文検索                      |
+| EXIF解析       | exifr                                    | TS製、非同期、幅広いタグ対応                      |
+| サムネイル     | sharp                                    | 高速、WebP出力対応                                |
+| 仮想スクロール | @tanstack/react-virtual                  | 軽量、柔軟                                        |
+| バリデーション | zod                                      | ランタイム型検証、Branded Types基盤               |
+| リンター       | ESLint (flat config) + typescript-eslint | 厳格な静的解析                                    |
+| フォーマッター | Prettier                                 | コードスタイル統一                                |
+| コンテナ       | Docker + Compose                         | 実行環境の再現性、Bun不要のデプロイ               |
 
 ## 型システム設計
 
@@ -169,22 +169,28 @@ export default tseslint.config(
       '@typescript-eslint/no-import-type-side-effects': 'error',
 
       // --- 未使用コード検出 ---
-      '@typescript-eslint/no-unused-vars': ['error', {
-        argsIgnorePattern: '^_',
-        varsIgnorePattern: '^_',
-      }],
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+        },
+      ],
 
       // --- asキャスト禁止（Branded Types強制） ---
-      '@typescript-eslint/consistent-type-assertions': ['error', {
-        assertionStyle: 'never',
-      }],
+      '@typescript-eslint/consistent-type-assertions': [
+        'error',
+        {
+          assertionStyle: 'never',
+        },
+      ],
 
       // --- その他 ---
       '@typescript-eslint/no-floating-promises': 'error',
       '@typescript-eslint/await-thenable': 'error',
       '@typescript-eslint/require-await': 'error',
       'no-console': ['warn', { allow: ['warn', 'error'] }],
-      'eqeqeq': ['error', 'always'],
+      eqeqeq: ['error', 'always'],
     },
   },
   {
@@ -210,8 +216,8 @@ export default tseslint.config(
     "noPropertyAccessFromIndexSignature": true,
     "exactOptionalPropertyTypes": true,
     "forceConsistentCasingInFileNames": true,
-    "verbatimModuleSyntax": true
-  }
+    "verbatimModuleSyntax": true,
+  },
 }
 ```
 
@@ -363,10 +369,13 @@ import { basicAuth } from 'hono/basic-auth';
 import { env } from './config';
 
 if (env.AUTH_USER !== undefined && env.AUTH_PASS !== undefined) {
-  app.use('/*', basicAuth({
-    username: env.AUTH_USER,
-    password: env.AUTH_PASS,
-  }));
+  app.use(
+    '/*',
+    basicAuth({
+      username: env.AUTH_USER,
+      password: env.AUTH_PASS,
+    }),
+  );
 }
 ```
 
@@ -376,43 +385,43 @@ if (env.AUTH_USER !== undefined && env.AUTH_PASS !== undefined) {
 
 ### 画像
 
-| Method | Path | 説明 |
-|---|---|---|
-| GET | `/api/images` | 一覧取得（ページネーション、ソート、タグフィルタ対応） |
-| GET | `/api/images/search` | FTS5全文検索 |
-| GET | `/api/images/:id` | 詳細取得（`tags` 配列を含む） |
-| PATCH | `/api/images/:id` | メタデータ更新（タイトル編集等） |
-| GET | `/api/images/:id/file` | 元画像配信 |
-| GET | `/api/images/:id/thumb` | サムネイル配信 |
+| Method | Path                    | 説明                                                   |
+| ------ | ----------------------- | ------------------------------------------------------ |
+| GET    | `/api/images`           | 一覧取得（ページネーション、ソート、タグフィルタ対応） |
+| GET    | `/api/images/search`    | FTS5全文検索                                           |
+| GET    | `/api/images/:id`       | 詳細取得（`tags` 配列を含む）                          |
+| PATCH  | `/api/images/:id`       | メタデータ更新（タイトル編集等）                       |
+| GET    | `/api/images/:id/file`  | 元画像配信                                             |
+| GET    | `/api/images/:id/thumb` | サムネイル配信                                         |
 
 #### GET /api/images クエリパラメータ
 
-| パラメータ | 型 | デフォルト | 説明 |
-|---|---|---|---|
-| `page` | number | `1` | ページ番号（1始まり） |
-| `limit` | number | `50` | 1ページあたりの件数（1〜100） |
-| `sort` | string | — | ソートカラム名 |
-| `order` | string | — | `asc` または `desc` |
-| `tags` | string | — | タグIDのカンマ区切りリスト（例: `1,2,3`） |
-| `tagMode` | string | `or` | `and`（全タグ一致）/ `or`（いずれか一致）/ `not`（除外） |
+| パラメータ | 型     | デフォルト | 説明                                                     |
+| ---------- | ------ | ---------- | -------------------------------------------------------- |
+| `page`     | number | `1`        | ページ番号（1始まり）                                    |
+| `limit`    | number | `50`       | 1ページあたりの件数（1〜100）                            |
+| `sort`     | string | —          | ソートカラム名                                           |
+| `order`    | string | —          | `asc` または `desc`                                      |
+| `tags`     | string | —          | タグIDのカンマ区切りリスト（例: `1,2,3`）                |
+| `tagMode`  | string | `or`       | `and`（全タグ一致）/ `or`（いずれか一致）/ `not`（除外） |
 
 ### タグ
 
-| Method | Path | 説明 |
-|---|---|---|
-| GET | `/api/tags` | タグ一覧（画像数付き） |
-| POST | `/api/tags` | タグ作成 |
-| DELETE | `/api/tags/:id` | タグ削除 |
-| POST | `/api/images/bulk/tags` | 複数画像への一括タグ付与（body: `{ imageIds: number[], tagId: number }`） |
-| POST | `/api/images/:id/tags` | 画像にタグ付与（body: `{ tag_id: number }`） |
-| DELETE | `/api/images/:id/tags/:tagId` | 画像からタグ除去 |
+| Method | Path                          | 説明                                                                      |
+| ------ | ----------------------------- | ------------------------------------------------------------------------- |
+| GET    | `/api/tags`                   | タグ一覧（画像数付き）                                                    |
+| POST   | `/api/tags`                   | タグ作成                                                                  |
+| DELETE | `/api/tags/:id`               | タグ削除                                                                  |
+| POST   | `/api/images/bulk/tags`       | 複数画像への一括タグ付与（body: `{ imageIds: number[], tagId: number }`） |
+| POST   | `/api/images/:id/tags`        | 画像にタグ付与（body: `{ tag_id: number }`）                              |
+| DELETE | `/api/images/:id/tags/:tagId` | 画像からタグ除去                                                          |
 
 ### 同期
 
-| Method | Path | 説明 |
-|---|---|---|
-| POST | `/api/sync` | フルスキャン実行（UIの更新ボタンから呼ぶ） |
-| GET | `/api/sync/status` | 最終スキャン日時、前回の同期結果サマリ |
+| Method | Path               | 説明                                       |
+| ------ | ------------------ | ------------------------------------------ |
+| POST   | `/api/sync`        | フルスキャン実行（UIの更新ボタンから呼ぶ） |
+| GET    | `/api/sync/status` | 最終スキャン日時、前回の同期結果サマリ     |
 
 ## 同期設計
 
@@ -437,12 +446,12 @@ if (env.AUTH_USER !== undefined && env.AUTH_PASS !== undefined) {
 
 ### 差分検出ロジック
 
-| ファイル状態 | DB状態 | アクション |
-|---|---|---|
-| 存在する | 未登録 | EXIF読取 → サムネ生成 → INSERT |
-| 存在する | 登録済み、mtime or size 変化あり | EXIF再読取 → サムネ再生成 → UPDATE |
-| 存在する | 登録済み、mtime and size 変化なし | スキップ |
-| 存在しない | 登録済み | サムネ削除 → DELETE（CASCADE でタグも消える） |
+| ファイル状態 | DB状態                            | アクション                                    |
+| ------------ | --------------------------------- | --------------------------------------------- |
+| 存在する     | 未登録                            | EXIF読取 → サムネ生成 → INSERT                |
+| 存在する     | 登録済み、mtime or size 変化あり  | EXIF再読取 → サムネ再生成 → UPDATE            |
+| 存在する     | 登録済み、mtime and size 変化なし | スキップ                                      |
+| 存在しない   | 登録済み                          | サムネ削除 → DELETE（CASCADE でタグも消える） |
 
 ```typescript
 interface FileInfo {
@@ -502,8 +511,8 @@ function thumbPath(filePath: FilePath): ThumbPath {
 ```typescript
 // config.ts
 export const exifFieldMapping = {
-  prompt: 'description',   // XMP-dc:Description（exifrでは小文字）
-  title: 'title',          // XMP-dc:Title（exifrでは小文字）
+  prompt: 'description', // XMP-dc:Description（exifrでは小文字）
+  title: 'title', // XMP-dc:Title（exifrでは小文字）
 } as const;
 ```
 
@@ -551,11 +560,11 @@ export const exifFieldMapping = {
 
 ルーティングライブラリは使わない。`history.pushState` + `popstate` の薄いラッパーで十分。
 
-| パス | 画面 | 状態管理 |
-|---|---|---|
-| `/` | 画像一覧 | `?q=`（検索）`?tags=1,2`（タグ）`?tagMode=and`（モード）をsearch paramsで同期 |
-| `/images/:id` | 画像詳細 | IDだけURLに載せる。戻るボタンで一覧に帰れる |
-| `/compare?ids=1,2,3` | 比較ビュー | 比較対象の画像IDをsearch paramsで保持 |
+| パス                 | 画面       | 状態管理                                                                      |
+| -------------------- | ---------- | ----------------------------------------------------------------------------- |
+| `/`                  | 画像一覧   | `?q=`（検索）`?tags=1,2`（タグ）`?tagMode=and`（モード）をsearch paramsで同期 |
+| `/images/:id`        | 画像詳細   | IDだけURLに載せる。戻るボタンで一覧に帰れる                                   |
+| `/compare?ids=1,2,3` | 比較ビュー | 比較対象の画像IDをsearch paramsで保持                                         |
 
 フィルタ状態はURL search paramsと双方向同期する。変更時は `replaceState`（履歴を汚さない）、ページ遷移時は `pushState`。リロード・戻る/進むで状態が復元される。
 
@@ -599,11 +608,11 @@ React標準の状態管理で十分。外部ライブラリは入れない。
 
 ### ボリューム設計
 
-| マウント先（コンテナ内） | 種別 | 内容 |
-|---|---|---|
-| `/images` | bind mount (read-only) | ホストの画像ディレクトリ |
-| `/data/db` | named volume | SQLiteデータベース（viewer.db） |
-| `/data/thumbnails` | named volume | 生成サムネイル |
+| マウント先（コンテナ内） | 種別                   | 内容                            |
+| ------------------------ | ---------------------- | ------------------------------- |
+| `/images`                | bind mount (read-only) | ホストの画像ディレクトリ        |
+| `/data/db`               | named volume           | SQLiteデータベース（viewer.db） |
+| `/data/thumbnails`       | named volume           | 生成サムネイル                  |
 
 画像ディレクトリは read-only でマウントする。ビューワーが元画像を書き換えることは絶対にない。
 DB・サムネイルは named volume にして、コンテナを作り直してもデータが残るようにする。
@@ -675,6 +684,7 @@ CMD ["bun", "run", "src/server/index.ts"]
 ```
 
 **ポイント:**
+
 - マルチステージビルド。ビルド成果物だけを本番イメージに持っていく
 - BunはTypeScriptを直接実行できるため、ビルド済みJSではなくソースを実行する
 - `libvips-dev` は sharp が必要とするネイティブ依存。サムネイル生成に必須
@@ -687,7 +697,7 @@ services:
   viewer:
     build: .
     ports:
-      - "${PORT:-3000}:3000"
+      - '${PORT:-3000}:3000'
     volumes:
       - ${IMAGE_DIR:?IMAGE_DIR is required}:/images:ro
       - db-data:/data/db

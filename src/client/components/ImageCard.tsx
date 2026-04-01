@@ -8,7 +8,13 @@ interface ImageCardProps {
   onToggleSelect: (id: number) => void;
 }
 
-export function ImageCard({ image, onClick, selectionMode, selected, onToggleSelect }: ImageCardProps) {
+export function ImageCard({
+  image,
+  onClick,
+  selectionMode,
+  selected,
+  onToggleSelect,
+}: ImageCardProps) {
   const handleClick = () => {
     if (selectionMode) {
       onToggleSelect(image.id);

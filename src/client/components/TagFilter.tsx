@@ -49,9 +49,7 @@ export function TagFilter({
 
   return (
     <aside className="w-56 shrink-0 border-r border-gray-200 bg-gray-50 p-4">
-      <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-gray-500">
-        Tags
-      </h2>
+      <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-gray-500">Tags</h2>
 
       {/* AND/OR toggle */}
       {hasInclude ? (
@@ -102,7 +100,11 @@ export function TagFilter({
                 <button
                   type="button"
                   onClick={() => {
-                    if (window.confirm(`Delete tag "${tag.name}"? This will remove it from ${String(tag.image_count)} image(s) and cannot be undone.`)) {
+                    if (
+                      window.confirm(
+                        `Delete tag "${tag.name}"? This will remove it from ${String(tag.image_count)} image(s) and cannot be undone.`,
+                      )
+                    ) {
                       void onDeleteTag(tag.id);
                     }
                   }}

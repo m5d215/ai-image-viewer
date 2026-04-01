@@ -5,7 +5,15 @@ import { ImageId } from '../../shared/brands';
 import { ImagePatchBody, SearchQuery } from '../../shared/schemas';
 import { getDb } from '../db/connection';
 import type { SortColumn, SortOrder } from '../db/queries';
-import { countImages, getAllImages, getImageById, getImageTags, isSortColumn, isSortOrder, updateImage } from '../db/queries';
+import {
+  countImages,
+  getAllImages,
+  getImageById,
+  getImageTags,
+  isSortColumn,
+  isSortOrder,
+  updateImage,
+} from '../db/queries';
 import { searchImages } from '../services/search';
 
 const ListQuery = z.object({
@@ -29,7 +37,15 @@ images.get('/', (c) => {
   const { page, limit, sort, order, includeTags, excludeTags, tagMode } = parsed.data;
   const offset = (page - 1) * limit;
   const db = getDb();
-  const listOptions: { limit: number; offset: number; sort?: SortColumn; order?: SortOrder; includeTagIds?: number[]; excludeTagIds?: number[]; tagMode?: 'and' | 'or' } = { limit, offset };
+  const listOptions: {
+    limit: number;
+    offset: number;
+    sort?: SortColumn;
+    order?: SortOrder;
+    includeTagIds?: number[];
+    excludeTagIds?: number[];
+    tagMode?: 'and' | 'or';
+  } = { limit, offset };
   if (typeof sort === 'string' && isSortColumn(sort)) {
     listOptions.sort = sort;
   }
@@ -39,7 +55,9 @@ images.get('/', (c) => {
 
   // Parse include tag IDs from comma-separated string
   if (typeof includeTags === 'string' && includeTags.length > 0) {
-    const tagIdResults = includeTags.split(',').map((s) => z.coerce.number().int().positive().safeParse(s.trim()));
+    const tagIdResults = includeTags
+      .split(',')
+      .map((s) => z.coerce.number().int().positive().safeParse(s.trim()));
     const validTagIds: number[] = [];
     for (const result of tagIdResults) {
       if (!result.success) {
@@ -53,7 +71,9 @@ images.get('/', (c) => {
 
   // Parse exclude tag IDs from comma-separated string
   if (typeof excludeTags === 'string' && excludeTags.length > 0) {
-    const tagIdResults = excludeTags.split(',').map((s) => z.coerce.number().int().positive().safeParse(s.trim()));
+    const tagIdResults = excludeTags
+      .split(',')
+      .map((s) => z.coerce.number().int().positive().safeParse(s.trim()));
     const validTagIds: number[] = [];
     for (const result of tagIdResults) {
       if (!result.success) {
@@ -66,7 +86,11 @@ images.get('/', (c) => {
   }
 
   const rows = getAllImages(db, listOptions);
-  const countOptions: { includeTagIds?: number[]; excludeTagIds?: number[]; tagMode?: 'and' | 'or' } = {};
+  const countOptions: {
+    includeTagIds?: number[];
+    excludeTagIds?: number[];
+    tagMode?: 'and' | 'or';
+  } = {};
   if (listOptions.includeTagIds) {
     countOptions.includeTagIds = listOptions.includeTagIds;
   }
@@ -89,10 +113,19 @@ images.get('/search', (c) => {
   const { q, page, limit, includeTags, excludeTags, tagMode } = parsed.data;
   const offset = (page - 1) * limit;
   const db = getDb();
-  const searchOptions: { query: string; limit: number; offset: number; includeTagIds?: number[]; excludeTagIds?: number[]; tagMode?: 'and' | 'or' } = { query: q, limit, offset };
+  const searchOptions: {
+    query: string;
+    limit: number;
+    offset: number;
+    includeTagIds?: number[];
+    excludeTagIds?: number[];
+    tagMode?: 'and' | 'or';
+  } = { query: q, limit, offset };
 
   if (typeof includeTags === 'string' && includeTags.length > 0) {
-    const tagIdResults = includeTags.split(',').map((s) => z.coerce.number().int().positive().safeParse(s.trim()));
+    const tagIdResults = includeTags
+      .split(',')
+      .map((s) => z.coerce.number().int().positive().safeParse(s.trim()));
     const validTagIds: number[] = [];
     for (const result of tagIdResults) {
       if (!result.success) {
@@ -105,7 +138,9 @@ images.get('/search', (c) => {
   }
 
   if (typeof excludeTags === 'string' && excludeTags.length > 0) {
-    const tagIdResults = excludeTags.split(',').map((s) => z.coerce.number().int().positive().safeParse(s.trim()));
+    const tagIdResults = excludeTags
+      .split(',')
+      .map((s) => z.coerce.number().int().positive().safeParse(s.trim()));
     const validTagIds: number[] = [];
     for (const result of tagIdResults) {
       if (!result.success) {

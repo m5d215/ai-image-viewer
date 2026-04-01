@@ -30,17 +30,17 @@
 
 ## 技術スタック
 
-| レイヤー | 技術 |
-|---|---|
-| ランタイム | Bun |
-| バックエンド | Hono |
-| フロントエンド | React + Tailwind CSS |
-| ビルド | Vite |
-| DB | SQLite (FTS5) |
-| サムネイル生成 | sharp |
-| EXIF解析 | exifr |
+| レイヤー       | 技術                    |
+| -------------- | ----------------------- |
+| ランタイム     | Bun                     |
+| バックエンド   | Hono                    |
+| フロントエンド | React + Tailwind CSS    |
+| ビルド         | Vite                    |
+| DB             | SQLite (FTS5)           |
+| サムネイル生成 | sharp                   |
+| EXIF解析       | exifr                   |
 | 仮想スクロール | @tanstack/react-virtual |
-| バリデーション | zod |
+| バリデーション | zod                     |
 
 ## クイックスタート
 
@@ -77,8 +77,8 @@ IMAGE_DIR=/path/to/images docker compose up -d
 
 ```typescript
 export const exifFieldMapping = {
-  prompt: 'description',   // XMP-dc:Description
-  title: 'title',          // XMP-dc:Title
+  prompt: 'description', // XMP-dc:Description
+  title: 'title', // XMP-dc:Title
 } as const;
 ```
 
@@ -88,24 +88,24 @@ export const exifFieldMapping = {
 
 ### ボリューム設計
 
-| マウント先（コンテナ内） | 種別 | 内容 |
-|---|---|---|
-| `/images` | bind mount (read-only) | ホストの画像ディレクトリ |
-| `/data/db` | named volume | SQLiteデータベース |
-| `/data/thumbnails` | named volume | 生成サムネイル |
+| マウント先（コンテナ内） | 種別                   | 内容                     |
+| ------------------------ | ---------------------- | ------------------------ |
+| `/images`                | bind mount (read-only) | ホストの画像ディレクトリ |
+| `/data/db`               | named volume           | SQLiteデータベース       |
+| `/data/thumbnails`       | named volume           | 生成サムネイル           |
 
 画像ディレクトリはread-onlyでマウントされる。元画像を書き換えることはない。
 
 ### 環境変数
 
-| 変数 | デフォルト | 説明 |
-|---|---|---|
-| `IMAGE_DIR` | `/images` | 画像ディレクトリのパス（**必須**） |
-| `DB_PATH` | `/data/db/viewer.db` | SQLiteデータベースのパス |
-| `THUMB_DIR` | `/data/thumbnails` | サムネイル格納先 |
-| `PORT` | `3000` | サーバーポート |
-| `AUTH_USER` | - | Basic認証ユーザー名 |
-| `AUTH_PASS` | - | Basic認証パスワード |
+| 変数        | デフォルト           | 説明                               |
+| ----------- | -------------------- | ---------------------------------- |
+| `IMAGE_DIR` | `/images`            | 画像ディレクトリのパス（**必須**） |
+| `DB_PATH`   | `/data/db/viewer.db` | SQLiteデータベースのパス           |
+| `THUMB_DIR` | `/data/thumbnails`   | サムネイル格納先                   |
+| `PORT`      | `3000`               | サーバーポート                     |
+| `AUTH_USER` | -                    | Basic認証ユーザー名                |
+| `AUTH_PASS` | -                    | Basic認証パスワード                |
 
 ### LAN公開時のBasic認証
 

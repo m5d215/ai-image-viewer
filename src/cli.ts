@@ -226,9 +226,7 @@ async function cmdImagesBulkTag(client: ClientOpts, flags: Map<string, string>):
   const tagIdStr = requireFlag(flags, '--tag-id');
   const imageIds = idsStr.split(',').map(Number);
   const tagId = Number(tagIdStr);
-  printJson(
-    await request(client, 'POST', '/api/images/bulk/tags', { body: { imageIds, tagId } }),
-  );
+  printJson(await request(client, 'POST', '/api/images/bulk/tags', { body: { imageIds, tagId } }));
 }
 
 async function cmdTagsList(client: ClientOpts): Promise<void> {

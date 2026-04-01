@@ -1,11 +1,7 @@
 import { useState, useEffect, useCallback, useReducer } from 'react';
 import type { TagId } from '@/shared/types';
 import type { TagWithCount } from '../lib/api';
-import {
-  fetchTags,
-  createTag as apiCreateTag,
-  deleteTag as apiDeleteTag,
-} from '../lib/api';
+import { fetchTags, createTag as apiCreateTag, deleteTag as apiDeleteTag } from '../lib/api';
 
 type TagState = 'include' | 'exclude';
 
@@ -27,7 +23,9 @@ export function useTags(options?: {
 }): UseTagsReturn {
   const [tags, setTags] = useState<TagWithCount[]>([]);
   const [loading, setLoading] = useState(true);
-  const [tagFilterState, setTagFilterState] = useState<Map<number, TagState>>(options?.initialTagFilterState ?? new Map());
+  const [tagFilterState, setTagFilterState] = useState<Map<number, TagState>>(
+    options?.initialTagFilterState ?? new Map(),
+  );
   const [tagMode, setTagMode] = useState<'and' | 'or'>(options?.initialTagMode ?? 'or');
   const [refreshKey, incrementRefreshKey] = useReducer((c: number) => c + 1, 0);
 
@@ -67,26 +65,30 @@ export function useTags(options?: {
     });
   }, []);
 
-  const createTag = useCallback(
-    async (name: string): Promise<void> => {
-      await apiCreateTag(name);
-      incrementRefreshKey();
-    },
-    [],
-  );
+  const createTag = useCallback(async (name: string): Promise<void> => {
+    await apiCreateTag(name);
+    incrementRefreshKey();
+  }, []);
 
-  const deleteTag = useCallback(
-    async (id: TagId): Promise<void> => {
-      await apiDeleteTag(id);
-      setTagFilterState((prev) => {
-        const next = new Map(prev);
-        next.delete(id);
-        return next;
-      });
-      incrementRefreshKey();
-    },
-    [],
-  );
+  const deleteTag = useCallback(async (id: TagId): Promise<void> => {
+    await apiDeleteTag(id);
+    setTagFilterState((prev) => {
+      const next = new Map(prev);
+      next.delete(id);
+      return next;
+    });
+    incrementRefreshKey();
+  }, []);
 
-  return { tags, loading, tagFilterState, tagMode, setTagMode, toggleTag, createTag, deleteTag, refresh: incrementRefreshKey };
+  return {
+    tags,
+    loading,
+    tagFilterState,
+    tagMode,
+    setTagMode,
+    toggleTag,
+    createTag,
+    deleteTag,
+    refresh: incrementRefreshKey,
+  };
 }

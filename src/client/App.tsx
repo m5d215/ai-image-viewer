@@ -139,7 +139,16 @@ function ImageListPage({
   onImageClick: (id: number) => void;
   onCompare: (imageIds: number[]) => void;
 }) {
-  const { tags, tagFilterState, tagMode, setTagMode, toggleTag, createTag, deleteTag, refresh: refreshTags } = useTags({
+  const {
+    tags,
+    tagFilterState,
+    tagMode,
+    setTagMode,
+    toggleTag,
+    createTag,
+    deleteTag,
+    refresh: refreshTags,
+  } = useTags({
     initialTagFilterState: getInitialTagFilterState(),
     initialTagMode: getInitialTagMode(),
   });
@@ -162,8 +171,15 @@ function ImageListPage({
     return opts;
   }, [tagFilterState, tagMode]);
 
-  const { images, loading, loadingMore, hasMore, error, refresh, loadMore } = useImages(imagesOptions);
-  const { query, setQuery, results, loading: searchLoading, isActive } = useSearch({
+  const { images, loading, loadingMore, hasMore, error, refresh, loadMore } =
+    useImages(imagesOptions);
+  const {
+    query,
+    setQuery,
+    results,
+    loading: searchLoading,
+    isActive,
+  } = useSearch({
     initialQuery: getInitialQuery(),
     includeTagIds: imagesOptions.includeTagIds,
     excludeTagIds: imagesOptions.excludeTagIds,
@@ -261,11 +277,7 @@ function ImageListPage({
           {/* Toolbar */}
           <div className="flex items-center gap-4 border-b border-gray-200 bg-white px-6 py-3">
             <div className="flex-1">
-              <SearchBar
-                query={query}
-                onQueryChange={setQuery}
-                loading={searchLoading}
-              />
+              <SearchBar query={query} onQueryChange={setQuery} loading={searchLoading} />
             </div>
             <button
               type="button"
@@ -284,9 +296,7 @@ function ImageListPage({
           {/* Content */}
           <div className="flex-1 overflow-hidden p-4">
             {error !== null ? (
-              <div className="flex h-full items-center justify-center text-red-500">
-                {error}
-              </div>
+              <div className="flex h-full items-center justify-center text-red-500">{error}</div>
             ) : (loading && !isActive) || searchLoading ? (
               <div className="flex h-full items-center justify-center">
                 <div className="h-8 w-8 animate-spin rounded-full border-2 border-gray-300 border-t-blue-500" />

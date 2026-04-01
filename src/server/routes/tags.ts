@@ -37,7 +37,9 @@ tags.post('/', async (c) => {
   const db = getDb();
 
   // Check for duplicate
-  const existing: unknown = db.query('SELECT * FROM tags WHERE name = ?1').get(bodyParsed.data.name);
+  const existing: unknown = db
+    .query('SELECT * FROM tags WHERE name = ?1')
+    .get(bodyParsed.data.name);
   if (existing !== null) {
     return c.json({ error: 'Tag already exists' }, 409);
   }

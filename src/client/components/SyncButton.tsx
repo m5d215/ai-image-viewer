@@ -49,12 +49,7 @@ export function SyncButton({ onSyncComplete }: SyncButtonProps) {
         {syncing ? (
           <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-blue-500" />
         ) : (
-          <svg
-            className="h-4 w-4"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
+          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
               strokeLinecap="round"
               strokeLinejoin="round"

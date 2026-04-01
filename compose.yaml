@@ -2,7 +2,7 @@ services:
   viewer:
     build: .
     ports:
-      - "${PORT:-3000}:3000"
+      - '${PORT:-3000}:3000'
     volumes:
       - ${IMAGE_DIR:-.}:/images:ro
       - db-data:/data/db

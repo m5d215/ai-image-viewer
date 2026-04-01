@@ -48,7 +48,9 @@ export function buildCombinedTagFilter(
 
   // Include filter
   if (includeTagIds.length > 0) {
-    const includePlaceholders = includeTagIds.map((_, i) => `?${String(paramIndex + i)}`).join(', ');
+    const includePlaceholders = includeTagIds
+      .map((_, i) => `?${String(paramIndex + i)}`)
+      .join(', ');
     paramIndex += includeTagIds.length;
     params.push(...includeTagIds);
 
@@ -62,11 +64,15 @@ export function buildCombinedTagFilter(
 
   // Exclude filter
   if (excludeTagIds.length > 0) {
-    const excludePlaceholders = excludeTagIds.map((_, i) => `?${String(paramIndex + i)}`).join(', ');
+    const excludePlaceholders = excludeTagIds
+      .map((_, i) => `?${String(paramIndex + i)}`)
+      .join(', ');
     paramIndex += excludeTagIds.length;
     params.push(...excludeTagIds);
 
-    whereClauses.push(`images.id NOT IN (SELECT image_id FROM image_tags WHERE tag_id IN (${excludePlaceholders}))`);
+    whereClauses.push(
+      `images.id NOT IN (SELECT image_id FROM image_tags WHERE tag_id IN (${excludePlaceholders}))`,
+    );
   }
 
   const where = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
@@ -95,7 +101,10 @@ export function getAllImages(db: Database, options: ListOptions): z.infer<typeof
   return rows.map((row) => ImageRow.parse(row));
 }
 
-export function countImages(db: Database, options?: { includeTagIds?: number[]; excludeTagIds?: number[]; tagMode?: 'and' | 'or' }): number {
+export function countImages(
+  db: Database,
+  options?: { includeTagIds?: number[]; excludeTagIds?: number[]; tagMode?: 'and' | 'or' },
+): number {
   const includeTagIds = options?.includeTagIds ?? [];
   const excludeTagIds = options?.excludeTagIds ?? [];
   if (includeTagIds.length > 0 || excludeTagIds.length > 0) {
